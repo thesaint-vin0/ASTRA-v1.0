@@ -30,10 +30,6 @@ def utcnow() -> datetime:
     return datetime.now(timezone.utc)
 
 
-# ============================================================
-# Enums
-# ============================================================
-
 class MemoryType(str, enum.Enum):
     SHORT_TERM = "short_term"
     LONG_TERM = "long_term"
@@ -75,12 +71,7 @@ class AuditAction(str, enum.Enum):
     SECURITY = "security"
 
 
-# ============================================================
-# Conversation Models
-# ============================================================
-
 class Conversation(Base):
-    """Represents a conversation thread."""
     __tablename__ = "conversations"
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=generate_uuid)
@@ -88,13 +79,12 @@ class Conversation(Base):
     personality: Mapped[str] = mapped_column(String(50), default="professional")
     model: Mapped[str] = mapped_column(String(100), nullable=True)
     system_prompt: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
-    metadata: Mapped[Optional[Dict[str, Any]]] = mapped_column(JSON, nullable=True)
+    extra_data: Mapped[Optional[Dict[str, Any]]] = mapped_column("md_json", JSON, nullable=True)
     is_archived: Mapped[bool] = mapped_column(Boolean, default=False)
     token_count: Mapped[int] = mapped_column(Integer, default=0)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
     updated_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow, onupdate=utcnow)
 
-    # Relationships
     messages: Mapped[List["Message"]] = relationship(
         "Message", back_populates="conversation", cascade="all, delete-orphan",
         order_by="Message.created_at"
@@ -107,7 +97,6 @@ class Conversation(Base):
 
 
 class Message(Base):
-    """Individual message within a conversation."""
     __tablename__ = "messages"
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=generate_uuid)
@@ -119,12 +108,11 @@ class Message(Base):
     content_type: Mapped[str] = mapped_column(String(50), default="text")
     tool_calls: Mapped[Optional[Dict[str, Any]]] = mapped_column(JSON, nullable=True)
     tool_results: Mapped[Optional[Dict[str, Any]]] = mapped_column(JSON, nullable=True)
-    metadata: Mapped[Optional[Dict[str, Any]]] = mapped_column(JSON, nullable=True)
+    extra_data: Mapped[Optional[Dict[str, Any]]] = mapped_column("msg_json", JSON, nullable=True)
     token_count: Mapped[int] = mapped_column(Integer, default=0)
     is_streaming: Mapped[bool] = mapped_column(Boolean, default=False)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
 
-    # Relationships
     conversation: Mapped["Conversation"] = relationship("Conversation", back_populates="messages")
 
     __table_args__ = (
@@ -133,12 +121,7 @@ class Message(Base):
     )
 
 
-# ============================================================
-# Memory Models
-# ============================================================
-
 class Memory(Base):
-    """Multi-layered memory storage."""
     __tablename__ = "memories"
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=generate_uuid)
@@ -151,7 +134,7 @@ class Memory(Base):
     access_count: Mapped[int] = mapped_column(Integer, default=1)
     category: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
     tags: Mapped[Optional[List[str]]] = mapped_column(JSON, nullable=True)
-    metadata: Mapped[Optional[Dict[str, Any]]] = mapped_column(JSON, nullable=True)
+    extra_data: Mapped[Optional[Dict[str, Any]]] = mapped_column("mem_json", JSON, nullable=True)
     expires_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
     updated_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow, onupdate=utcnow)
@@ -167,12 +150,7 @@ class Memory(Base):
     )
 
 
-# ============================================================
-# Document Models
-# ============================================================
-
 class Document(Base):
-    """Stored documents and files."""
     __tablename__ = "documents"
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=generate_uuid)
@@ -185,7 +163,7 @@ class Document(Base):
     embedding_id: Mapped[Optional[str]] = mapped_column(String(36), nullable=True)
     page_count: Mapped[int] = mapped_column(Integer, default=0)
     author: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
-    metadata: Mapped[Optional[Dict[str, Any]]] = mapped_column(JSON, nullable=True)
+    extra_data: Mapped[Optional[Dict[str, Any]]] = mapped_column("doc_json", JSON, nullable=True)
     tags: Mapped[Optional[List[str]]] = mapped_column(JSON, nullable=True)
     is_indexed: Mapped[bool] = mapped_column(Boolean, default=False)
     checksum: Mapped[Optional[str]] = mapped_column(String(64), nullable=True)
@@ -199,12 +177,7 @@ class Document(Base):
     )
 
 
-# ============================================================
-# User & Authentication Models
-# ============================================================
-
 class User(Base):
-    """User account for authentication and preferences."""
     __tablename__ = "users"
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=generate_uuid)
@@ -230,7 +203,6 @@ class User(Base):
 
 
 class Setting(Base):
-    """Application settings stored in database."""
     __tablename__ = "settings"
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=generate_uuid)
@@ -249,12 +221,7 @@ class Setting(Base):
     )
 
 
-# ============================================================
-# Plugin Models
-# ============================================================
-
 class Plugin(Base):
-    """Installed plugin registry."""
     __tablename__ = "plugins"
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=generate_uuid)
@@ -278,12 +245,7 @@ class Plugin(Base):
     )
 
 
-# ============================================================
-# Task Models
-# ============================================================
-
 class Task(Base):
-    """Background task tracking."""
     __tablename__ = "tasks"
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=generate_uuid)
@@ -294,7 +256,7 @@ class Task(Base):
     input_data: Mapped[Optional[Dict[str, Any]]] = mapped_column(JSON, nullable=True)
     output_data: Mapped[Optional[Dict[str, Any]]] = mapped_column(JSON, nullable=True)
     error_message: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
-    metadata: Mapped[Optional[Dict[str, Any]]] = mapped_column(JSON, nullable=True)
+    extra_data: Mapped[Optional[Dict[str, Any]]] = mapped_column("task_json", JSON, nullable=True)
     started_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
     completed_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
@@ -307,12 +269,7 @@ class Task(Base):
     )
 
 
-# ============================================================
-# Audit Log Models
-# ============================================================
-
 class AuditLog(Base):
-    """Security and activity audit trail."""
     __tablename__ = "audit_logs"
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=generate_uuid)
@@ -332,4 +289,3 @@ class AuditLog(Base):
         Index("idx_audit_user", "user_id"),
         Index("idx_audit_timestamp", "timestamp"),
     )
-
