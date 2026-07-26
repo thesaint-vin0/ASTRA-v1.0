@@ -59,7 +59,7 @@ class MemoryEngine:
             category=category,
             tags=tags or [],
             importance=importance,
-            metadata=metadata or {},
+            extra_data=metadata or {},
             expires_at=(
                 datetime.now(timezone.utc) + timedelta(seconds=ttl)
                 if ttl
@@ -196,7 +196,7 @@ class MemoryEngine:
                             "category": mem.category,
                             "tags": mem.tags,
                             "importance": mem.importance,
-                            "metadata": mem.metadata,
+                            "extra_data": mem.extra_data,
                             "created_at": mem.created_at.isoformat(),
                             "source": "database",
                         }

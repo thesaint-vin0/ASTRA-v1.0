@@ -61,6 +61,8 @@ rich==13.9.4
 loguru==0.7.3
 tqdm==4.67.1
 pydub==0.25.1
+packaging==24.2
+aiofiles==24.1.0
 
 # Plugin System
 importlib-metadata==8.5.0
