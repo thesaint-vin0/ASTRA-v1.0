@@ -31,8 +31,8 @@ markdown==3.7.0
 pillow==11.1.0
 opencv-python-headless==4.10.0.84
 
-# Voice (Whisper STT)
-openai-whisper==20240930
+# Voice (Whisper STT - requires build tools, install separately if needed)
+# openai-whisper==20240930  # Commented out - install with: pip install openai-whisper setuptools
 sounddevice==0.5.1
 soundfile==0.12.1
 

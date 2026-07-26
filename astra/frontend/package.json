@@ -4,6 +4,7 @@
   "description": "Astra AI Operating System - Desktop Application",
   "private": true,
   "main": "electron/main.js",
+  "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
