@@ -12,6 +12,16 @@ import yaml
 import json
 
 
+def _load_or_create_secret(secret_path: Path) -> str:
+    """Load existing secret key or create a new one and persist it."""
+    if secret_path.exists():
+        return secret_path.read_text().strip()
+    secret = os.urandom(32).hex()
+    secret_path.parent.mkdir(parents=True, exist_ok=True)
+    secret_path.write_text(secret)
+    return secret
+
+
 class Settings(BaseSettings):
     """Application settings loaded from environment variables and config files."""
 
@@ -96,7 +106,9 @@ class Settings(BaseSettings):
     MAX_IMAGE_SIZE: int = 10 * 1024 * 1024  # 10MB
 
     # Security
-    SECRET_KEY: str = Field(default_factory=lambda: os.urandom(32).hex())
+    SECRET_KEY: str = Field(
+        default_factory=lambda: _load_or_create_secret(Path.home() / ".astra" / "config" / ".secret_key")
+    )
     ENCRYPTION_ALGORITHM: str = "AES-256-GCM"
     PASSWORD_HASH_ALGORITHM: str = "bcrypt"
     JWT_ALGORITHM: str = "HS256"

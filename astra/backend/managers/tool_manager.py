@@ -260,10 +260,68 @@ class ToolManager:
             return {"success": False, "error": str(e)}
 
     async def _web_search(self, query: str) -> Dict[str, Any]:
-        return {"success": True, "message": f"Web search for '{query}'"}
+        """Perform web search using DuckDuckGo or fallback."""
+        try:
+            import httpx
+            # Try DuckDuckGo Lite API (no API key required)
+            async with httpx.AsyncClient(timeout=15.0) as client:
+                response = await client.get(
+                    "https://lite.duckduckgo.com/lite/",
+                    params={"q": query},
+                    headers={"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"},
+                )
+                if response.status_code == 200:
+                    import re
+                    # Extract result snippets from HTML
+                    snippets = re.findall(r'<a[^>]*class="result-link"[^>]*>(.*?)</a>', response.text, re.DOTALL)
+                    results = [s.strip() for s in snippets[:5] if s.strip()]
+                    return {"success": True, "query": query, "results": results, "count": len(results)}
+                return {"success": False, "error": f"Search engine returned {response.status_code}", "query": query}
+        except ImportError:
+            return {"success": False, "error": "httpx not available for web search", "query": query}
+        except Exception as e:
+            return {"success": False, "error": str(e), "query": query}
 
     async def _fetch_webpage(self, url: str) -> Dict[str, Any]:
-        return {"success": True, "message": f"Webpage '{url}'"}
+        """Fetch and extract readable content from a webpage."""
+        try:
+            import httpx
+            from urllib.parse import urlparse
+
+            parsed = urlparse(url)
+            if not parsed.scheme:
+                url = "https://" + url
+
+            async with httpx.AsyncClient(timeout=30.0, follow_redirects=True) as client:
+                response = await client.get(
+                    url,
+                    headers={"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"},
+                )
+                response.raise_for_status()
+
+                content_type = response.headers.get("content-type", "")
+                if "text/html" in content_type:
+                    # Extract text content simply
+                    import re
+                    html = response.text
+                    # Remove scripts and styles
+                    html = re.sub(r'<script[^>]*>.*?</script>', '', html, flags=re.DOTALL)
+                    html = re.sub(r'<style[^>]*>.*?</style>', '', html, flags=re.DOTALL)
+                    # Extract text
+                    text = re.sub(r'<[^>]+>', ' ', html)
+                    text = re.sub(r'\s+', ' ', text).strip()
+                    # Limit to first 5000 chars
+                    text = text[:5000]
+                    title_match = re.search(r'<title[^>]*>(.*?)</title>', html, re.DOTALL)
+                    title = title_match.group(1).strip() if title_match else url
+                    return {
+                        "success": True, "url": url, "title": title,
+                        "content": text, "content_length": len(text),
+                    }
+                else:
+                    return {"success": True, "url": url, "content": f"[{content_type}]", "content_length": 0}
+        except Exception as e:
+            return {"success": False, "error": str(e), "url": url}
 
     async def _get_system_info(self) -> Dict[str, Any]:
         import platform
@@ -279,7 +337,21 @@ class ToolManager:
         return {"success": True, "datetime": now.isoformat(), "date": now.strftime("%Y-%m-%d"), "time": now.strftime("%H:%M:%S UTC")}
 
     async def _search_memory(self, query: str) -> Dict[str, Any]:
-        return {"success": True, "message": f"Memory search for '{query}'"}
+        """Search through stored memories via the memory engine."""
+        try:
+            from ..core.memory_engine import MemoryEngine
+            from ..database.vector_store import VectorStore
+            vector_store = VectorStore()
+            memory_engine = MemoryEngine(vector_store)
+            results = await memory_engine.recall(query=query, limit=10)
+            return {
+                "success": True,
+                "query": query,
+                "results": results,
+                "count": len(results),
+            }
+        except Exception as e:
+            return {"success": False, "error": str(e), "query": query}
 
     async def _calculate(self, expression: str) -> Dict[str, Any]:
         try:

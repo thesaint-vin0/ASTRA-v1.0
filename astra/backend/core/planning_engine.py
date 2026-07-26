@@ -291,8 +291,21 @@ class PlanningEngine:
         task["status"] = "running"
         logger.info(f"Executing task: {task['name']} in plan {plan_id}")
 
-        import asyncio
-        await asyncio.sleep(0.1)
+        # Execute task via tool_manager if available
+        if tool_manager:
+            task_name_lower = task.get("name", "").lower()
+            tool_map = {
+                "code": "execute_python",
+                "search": "web_search",
+                "read": "read_file",
+                "write": "write_file",
+                "calculate": "calculate",
+            }
+            for keyword, tool_name in tool_map.items():
+                if keyword in task_name_lower:
+                    tool_result = await tool_manager.execute_tool(tool_name, {"code": "", "query": task_name_lower})
+                    task["result"] = tool_result
+                    break
 
         task["status"] = "completed"
         plan["completed_tasks"] = sum(

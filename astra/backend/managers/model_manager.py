@@ -690,6 +690,48 @@ class ModelManager:
 
         return available_ollama[0]
 
+
+    async def health_check(self, model_name: Optional[str] = None) -> Dict[str, Any]:
+        """Run a health check on a specific model or all models."""
+        models_to_check = [model_name] if model_name else list(self.models.keys())
+        results = {}
+        for name in models_to_check:
+            provider = self._get_provider(name)
+            result = {'provider': provider, 'status': 'unknown', 'latency_ms': 0, 'error': None}
+            try:
+                import time
+                start = time.time()
+                if provider == 'ollama':
+                    resp = await self.ollama_client.post('/api/generate', json={
+                        'model': name, 'prompt': 'Hi', 'stream': False, 'options': {'num_predict': 1}
+                    })
+                    if resp.status_code == 200:
+                        result['status'] = 'healthy'
+                        result['latency_ms'] = int((time.time() - start) * 1000)
+                        data = resp.json()
+                        result['eval_count'] = data.get('eval_count', 0)
+                        result['eval_duration'] = data.get('eval_duration', 0)
+                    else:
+                        result['status'] = 'unhealthy'
+                        result['error'] = f'HTTP {resp.status_code}'
+                elif provider == 'openai':
+                    resp = await self.cloud_client.get('/models')
+                    if resp.status_code == 200:
+                        result['status'] = 'healthy'
+                        result['latency_ms'] = int((time.time() - start) * 1000)
+                    else:
+                        result['status'] = 'unhealthy'
+                        result['error'] = f'HTTP {resp.status_code}'
+                else:
+                    result['status'] = 'unknown'
+                    result['error'] = f'No health check for provider: {provider}'
+            except Exception as e:
+                result['status'] = 'unhealthy'
+                result['error'] = str(e)[:200]
+            results[name] = result
+        return results
+
+
     def get_status(self) -> Dict[str, Any]:
         """Get model manager status."""
         return {

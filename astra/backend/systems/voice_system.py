@@ -172,7 +172,6 @@ class VoiceSystem:
             )
             sd.wait()
 
-            # Save to temp WAV file
             with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as f:
                 temp_path = f.name
                 self._save_wav(temp_path, audio, self._sample_rate)
@@ -206,12 +205,9 @@ class VoiceSystem:
             output_path = str(settings.TEMP_DIR / f"tts_{hash(text)}.wav")
 
         try:
-            # Try Piper TTS
             import subprocess as sp
             piper_bin = "piper" if os.name != "nt" else "piper.exe"
-            voice_model = settings.PIPER_VOICE
 
-            # Check if piper is installed
             try:
                 sp.run([piper_bin, "--help"], capture_output=True, timeout=5)
                 piper_available = True
@@ -219,8 +215,7 @@ class VoiceSystem:
                 piper_available = False
 
             if piper_available:
-                # Use Piper for high-quality TTS
-                voice_path = Path(settings.MODELS_DIR) / "piper" / f"{voice_model}.tflite"
+                voice_path = Path(settings.MODELS_DIR) / "piper" / f"{settings.PIPER_VOICE}.tflite"
                 if voice_path.exists():
                     process = sp.Popen(
                         [piper_bin, "--model", str(voice_path), "--output_file", output_path],
@@ -231,15 +226,13 @@ class VoiceSystem:
                     process.wait(timeout=30)
                     logger.info(f"Piper TTS generated: {output_path}")
                 else:
-                    logger.warning(f"Piper voice model not found at {voice_path}, using fallback")
+                    logger.warning(f"Piper voice model not found, using fallback")
                     output_path = self._synthesize_fallback(text, output_path)
             else:
-                # Fallback: simple WAV generation
                 output_path = self._synthesize_fallback(text, output_path)
 
-            # Get audio duration
-            import wave
-            with wave.open(output_path, "r") as wf:
+            import wave as wav_mod
+            with wav_mod.open(output_path, "r") as wf:
                 frames = wf.getnframes()
                 rate = wf.getframerate()
                 duration = frames / rate if rate > 0 else 0
@@ -260,23 +253,21 @@ class VoiceSystem:
 
     def _synthesize_fallback(self, text: str, output_path: str) -> str:
         """Fallback TTS: generate a simple sine-wave based speech simulation."""
-        import wave
-        import struct
+        import wave as wav_mod
         import math
 
         sample_rate = 22050
-        duration = max(0.5, len(text) * 0.05)  # ~50ms per character
+        duration = max(0.5, len(text) * 0.05)
         n_samples = int(sample_rate * duration)
 
-        with wave.open(output_path, "w") as wf:
+        with wav_mod.open(output_path, "w") as wf:
             wf.setnchannels(1)
             wf.setsampwidth(2)
             wf.setframerate(sample_rate)
 
             for i in range(n_samples):
                 t = i / sample_rate
-                # Simple formant-like synthesis (not real speech)
-                freq = 200 + 50 * math.sin(2 * math.pi * 3 * t)  # pitch modulation
+                freq = 200 + 50 * math.sin(2 * math.pi * 3 * t)
                 amplitude = 0.3 * max(0, math.sin(2 * math.pi * t / duration))
                 sample = int(amplitude * 32767 * math.sin(2 * math.pi * freq * t))
                 wf.writeframes(struct.pack("<h", sample))
@@ -286,8 +277,8 @@ class VoiceSystem:
 
     def _save_wav(self, path: str, audio_data: np.ndarray, sample_rate: int):
         """Save numpy audio array to WAV file."""
-        import wave
-        with wave.open(path, "w") as wf:
+        import wave as wav_mod
+        with wav_mod.open(path, "w") as wf:
             wf.setnchannels(1)
             wf.setsampwidth(2)
             wf.setframerate(sample_rate)
@@ -295,27 +286,13 @@ class VoiceSystem:
             wf.writeframes(scaled.tobytes())
 
     async def detect_wake_word(self, audio_data: bytes) -> Dict[str, Any]:
-        """
-        Detect wake word in audio stream using keyword spotting.
-
-        Args:
-            audio_data: Raw audio bytes
-
-        Returns:
-            Dict with detection result and confidence
-        """
-        # For now, use a simple energy-based VAD + keyword heuristic
-        # In production, this would use a proper wake word engine like Porcupine
+        """Detect wake word in audio stream using energy-based VAD."""
         try:
-            import numpy as np
             audio_array = np.frombuffer(audio_data, dtype=np.int16).astype(np.float32) / 32768.0
-
-            # Voice activity detection based on energy
             energy = np.sqrt(np.mean(audio_array ** 2))
-            if energy < 0.02:  # Silence threshold
+            if energy < 0.02:
                 return {"detected": False, "confidence": 0.0, "wake_word": None}
 
-            # Simple zero-crossing rate for speech detection
             zcr = np.mean(np.abs(np.diff(np.sign(audio_array))))
             is_speech = zcr > 0.1 and energy > 0.05
 
@@ -335,18 +312,10 @@ class VoiceSystem:
             return {"detected": False, "confidence": 0.0, "wake_word": None}
 
     async def listen_for_wake_word(self, timeout: int = 30) -> Optional[Dict[str, Any]]:
-        """
-        Continuously listen for wake word from microphone.
-
-        Args:
-            timeout: Maximum listening time in seconds
-
-        Returns:
-            Detection result if wake word detected, None on timeout
-        """
+        """Continuously listen for wake word from microphone."""
         try:
             import sounddevice as sd
-            chunk_duration = 1  # 1-second chunks
+            chunk_duration = 1
             chunks = timeout // chunk_duration
 
             for _ in range(chunks):
@@ -362,11 +331,9 @@ class VoiceSystem:
                 if result.get("detected"):
                     logger.info(f"Wake word detected: {result}")
                     return result
-
                 await asyncio.sleep(0.1)
 
             return None
-
         except ImportError:
             logger.debug("sounddevice not available for wake word listening")
             return None
@@ -402,5 +369,5 @@ class VoiceSystem:
             "is_speaking": self.is_speaking,
             "wake_words": settings.WAKE_WORDS,
             "sample_rate": self._sample_rate,
-            "microphone_available": self._input_device is not None,
+            "microphone_available": getattr(self, '_input_device', None) is not None,
         }
