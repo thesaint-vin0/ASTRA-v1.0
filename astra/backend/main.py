@@ -16,8 +16,8 @@ from .config import settings
 from .database.database import init_database, DatabaseManager
 from .database.vector_store import VectorStore
 from .core.ai_engine import AIEngine
-from .api.routes import router, ai_engine as api_ai_engine
-from .api.websocket import websocket_endpoint, ai_engine as ws_ai_engine
+from .api import routes as api_routes
+from .api import websocket as ws_module
 
 # Configure logging
 logger.remove()
@@ -69,9 +69,9 @@ async def lifespan(app: FastAPI):
     except Exception as e:
         logger.warning(f"AI Engine initialization partial: {e}")
 
-    # Step 4: Wire up API dependencies
-    api_ai_engine = ai_engine
-    ws_ai_engine = ai_engine
+    # Step 4: Wire up API dependencies (set module-level variables)
+    api_routes.ai_engine = ai_engine
+    ws_module.ai_engine = ai_engine
 
     logger.info(f"{settings.APP_NAME} is ready on http://{settings.HOST}:{settings.PORT}")
     logger.info(f"API docs: http://{settings.HOST}:{settings.PORT}/docs")
@@ -107,12 +107,12 @@ app.add_middleware(
 )
 
 # Include API routes
-app.include_router(router)
+app.include_router(api_routes.router)
 
 # WebSocket endpoint
 @app.websocket("/ws")
 async def websocket_route(websocket: WebSocket):
-    await websocket_endpoint(websocket)
+    await ws_module.websocket_endpoint(websocket)
 
 
 # Static files (for frontend in production)

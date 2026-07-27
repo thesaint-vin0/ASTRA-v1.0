@@ -1,41 +1,35 @@
-# Astra AI v1.0 — Implementation Progress
+# Astra Initialization Progress
 
-## ✅ Phase 1-2: Fix Bugs, Stubs & Missing Files
-- [x] Fix `tool_manager.py` — Replaced mock implementations with real web_search, fetch_webpage, search_memory
-- [x] Fix `planning_engine.py` — Replaced `asyncio.sleep(0.1)` placeholder with tool_manager execution
-- [x] Fix `config.py` — SECRET_KEY now persisted to file for JWT stability
-- [x] Add `astra/backend/plugins/__init__.py`
-- [x] Add `astra/tests/backend/__init__.py`
-- [x] Add `astra/tests/frontend/__init__.py`
+## Step 1: Create Python virtual environment at `astra/venv/`
+- [x] Create venv
+- [x] Verify venv created
 
-## ✅ Phase 4: Complete Electron Frontend
-- [x] Create frontend package.json & dependencies
-- [x] Create Vite + React + TypeScript config
-- [x] Create Electron main process
-- [x] Create TailwindCSS config
-- [x] Create type definitions
-- [x] Create API services layer
-- [x] Create WebSocket service
-- [x] Create Zustand stores
-- [x] Create UI components (Sidebar, Chat, TitleBar, Layout, NotificationCenter, ConversationList, ChatMessage, ChatInput)
-- [x] Create pages (Dashboard, Login, Chat, Memory, Models, Files, Plugins, Settings, NotFound)
-- [x] Create theme system (light/dark/custom with CSS variables)
+## Step 2: Install dependencies from `requirements.txt`
+- [x] Install packages (fixed python-jwt==3.3.34 -> 4.1.0)
+- [x] Resolve any conflicts
+- [x] Verify packages installed
 
-## ✅ Phase 5-6: Documentation & README
-- [x] Update README with accurate feature status
-- [x] Architecture diagram in README
-- [x] All API endpoints documented
-- [x] Quick start guide updated
+## Step 3: Create `.env` if missing (skip — already exists)
+- [x] .env already exists — skipped
 
-## ⬜ Phase 7: Testing
-- [ ] Complete backend test coverage (90%+)
-- [ ] Frontend tests
+## Step 4: Create `~/.astra/` directory structure
+- [ ] Create directories
+- [ ] Verify directories
 
-## ⬜ Phase 9: Security
-- [ ] Input validation hardening
-- [ ] Rate limiting on all endpoints
+## Step 5: Create and run initialization script
+- [ ] Write `init_astra.py`
+- [ ] Run SQLite database initialization
+- [ ] Run ChromaDB initialization
+- [ ] Start FastAPI server
+- [ ] Verify `/api/health` returns 200
+- [ ] Verify WebSocket endpoint available
 
-## ⬜ Phase 10: Release
-- [ ] Package configuration
-- [ ] CI/CD setup
+## Step 6: Check Ollama (not installed)
+- [x] Ollama not installed — skip
 
+## Step 7: Verify Playwright browsers
+- [x] Playwright browsers already installed
+
+## Step 8: Generate startup report
+- [ ] Collect all stats
+- [ ] Print formatted report

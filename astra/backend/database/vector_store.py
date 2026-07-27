@@ -62,20 +62,29 @@ class VectorStore:
             try:
                 self._collection = self._client.get_collection(self.collection_name)
                 logger.info(f"Loaded existing collection: {self.collection_name}")
-            except ValueError:
+            except (ValueError, chromadb.errors.NotFoundError):
                 self._collection = self._client.create_collection(
                     name=self.collection_name,
                     metadata={"hnsw:space": "cosine", "description": "Astra memory store"},
                 )
                 logger.info(f"Created new collection: {self.collection_name}")
 
-            # Initialize embedding model
+            # Initialize embedding model (non-blocking - handles network timeouts gracefully)
             logger.info(f"Loading embedding model: {self.embedding_model_name}")
-            self._embedding_model = SentenceTransformer(
-                self.embedding_model_name,
-                device="cuda" if settings.GPU_ENABLED else "cpu",
-            )
-            logger.info(f"Embedding model loaded: {self.embedding_model_name}")
+            try:
+                self._embedding_model = SentenceTransformer(
+                    self.embedding_model_name,
+                    device="cuda" if settings.GPU_ENABLED else "cpu",
+                )
+                logger.info(f"Embedding model loaded: {self.embedding_model_name}")
+            except Exception as e:
+                logger.warning(f"Embedding model could not be loaded: {e}")
+                logger.warning(
+                    "Vector search unavailable until model is cached. "
+                    'Run: python -c "from sentence_transformers import SentenceTransformer; '
+                    "SentenceTransformer('all-MiniLM-L6-v2')\""
+                )
+                self._embedding_model = None
 
         except Exception as e:
             logger.error(f"Failed to initialize vector store: {e}")
@@ -273,4 +282,3 @@ class VectorStore:
 
 # Global vector store instance
 vector_store = VectorStore()
-
