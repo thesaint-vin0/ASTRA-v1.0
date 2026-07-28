@@ -27,7 +27,7 @@ export default function Settings() {
 
   const handleThemeChange = (newTheme: Theme) => {
     setTheme(newTheme)
-    addNotification('success', `Theme changed to ${newTheme}`)
+    addNotification('success', 'Theme changed to ' + newTheme)
   }
 
   const handleSave = async () => {
@@ -85,7 +85,6 @@ export default function Settings() {
                 <ColorInput label="Surface" value={customColors.surface} onChange={(v) => setCustomColors({ surface: v })} />
                 <ColorInput label="Text" value={customColors.text} onChange={(v) => setCustomColors({ text: v })} />
               </div>
-            </div>
           )}
         </div>
 
@@ -110,7 +109,6 @@ export default function Settings() {
               <input type="checkbox" defaultChecked className="toggle" />
             </SettingRow>
           </div>
-        </div>
 
         {/* Model Settings */}
         <div className="card p-6">
@@ -134,7 +132,6 @@ export default function Settings() {
               <input type="range" min="0" max="1" step="0.1" defaultValue={0.7} className="w-full" />
             </SettingRow>
           </div>
-        </div>
 
         {/* Update Settings */}
         <div className="card p-6">
@@ -151,7 +148,6 @@ export default function Settings() {
               <input type="checkbox" className="toggle" />
             </SettingRow>
           </div>
-        </div>
 
         {/* Save Button */}
         <div className="flex items-center justify-end gap-3">
@@ -164,7 +160,6 @@ export default function Settings() {
             Save Settings
           </button>
         </div>
-      </div>
     </div>
   )
 }
@@ -199,7 +194,5 @@ function ColorInput({ label, value, onChange }: { label: string; value: string; 
           className="input text-sm w-28"
         />
       </div>
-    </div>
   )
 }
-

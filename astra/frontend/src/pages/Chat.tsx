@@ -4,11 +4,11 @@ import ChatMessage from '../components/ChatMessage'
 import ChatInput from '../components/ChatInput'
 import ConversationList from '../components/ConversationList'
 import { useChatStore } from '../stores/chatStore'
-import { useAppStore } from '../stores/appStore'
 import wsService from '../services/websocket'
 import { api } from '../services/api'
 import type { Message } from '../types'
 import { Bot } from 'lucide-react'
+import { showToast } from '../components/Toast'
 
 export default function Chat() {
   const { conversationId } = useParams()
@@ -27,7 +27,6 @@ export default function Chat() {
     setIsStreaming,
     clearStream,
   } = useChatStore()
-  const { addNotification } = useAppStore()
 
   useEffect(() => {
     loadConversations()
@@ -54,7 +53,7 @@ export default function Chat() {
     })
 
     const unsubError = wsService.on('error', (event) => {
-      addNotification('error', (event.error as string) || 'An error occurred')
+      showToast({ type: 'error', title: 'Error', message: (event.error as string) || 'An error occurred' })
       setIsStreaming(false)
       clearStream()
     })
@@ -79,8 +78,8 @@ export default function Chat() {
       try {
         const conv = await createConversation(content.slice(0, 100))
         convId = conv.id
-      } catch {
-        addNotification('error', 'Failed to create conversation')
+} catch {
+        showToast({ type: 'error', title: 'Failed to create conversation' })
         return
       }
     }
@@ -99,7 +98,7 @@ export default function Chat() {
     try {
       await createConversation()
     } catch {
-      addNotification('error', 'Failed to create new conversation')
+      showToast({ type: 'error', title: 'Failed to create new conversation' })
     }
   }
 

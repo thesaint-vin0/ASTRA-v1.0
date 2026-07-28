@@ -30,7 +30,7 @@ export default function Files() {
         setItems(data.items)
         setCurrentPath(path)
       } else {
-        setError(data.error || 'Failed to list directory')
+        setError('Failed to list directory')
       }
     } catch (err) {
       setError((err as Error).message)

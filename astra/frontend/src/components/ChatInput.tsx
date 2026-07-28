@@ -1,8 +1,8 @@
 import { useState, useRef, useEffect, KeyboardEvent } from 'react'
 import { Send, Square, Mic, Image } from 'lucide-react'
 import { useChatStore } from '../stores/chatStore'
-import { useAppStore } from '../stores/appStore'
 import wsService from '../services/websocket'
+import { showToast } from './Toast'
 
 interface ChatInputProps {
   onSendMessage: (message: string) => void
@@ -13,7 +13,6 @@ export default function ChatInput({ onSendMessage, onCancel }: ChatInputProps) {
   const [input, setInput] = useState('')
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const { isStreaming } = useChatStore()
-  const { addNotification } = useAppStore()
 
   useEffect(() => {
     if (textareaRef.current) {
@@ -37,11 +36,11 @@ export default function ChatInput({ onSendMessage, onCancel }: ChatInputProps) {
   }
 
   const handleVoiceInput = () => {
-    addNotification('info', 'Voice input started... Speak now')
+    showToast({ type: 'info', title: 'Voice input started... Speak now' })
   }
 
   const handleImageUpload = () => {
-    addNotification('info', 'Image upload feature coming soon')
+    showToast({ type: 'info', title: 'Image upload', message: 'Feature coming soon' })
   }
 
   return (
