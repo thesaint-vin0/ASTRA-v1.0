@@ -1,10 +1,12 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useCallback, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   MessageSquare, Mic, Eye, Code, BookOpen, GitBranch,
   Zap, Puzzle, Brain, FileText, Cpu, Cloud, CheckCircle,
-  Play, ArrowRight, Clock, BarChart3
+  Play, ArrowRight, Clock, BarChart3, Search, Filter,
+  Award, RotateCcw, X, ChevronRight, Star, Bookmark
 } from 'lucide-react'
+import { showToast } from '../components/Toast'
 
 interface TutorialStep {
   title: string
@@ -23,6 +25,17 @@ interface Tutorial {
   difficulty: 'beginner' | 'intermediate' | 'advanced'
   progress?: number
 }
+
+interface TutorialProgress {
+  tutorialId: string
+  currentStep: number
+  completed: boolean
+  completedAt?: string
+  lastAccessedAt: string
+  score?: number
+}
+
+const TUTORIALS_PROGRESS_KEY = 'astra-tutorials-progress'
 
 const tutorials: Tutorial[] = [
   {
@@ -209,18 +222,48 @@ const tutorials: Tutorial[] = [
 
 const categories = Array.from(new Set(tutorials.map((t) => t.category)))
 
+function loadProgress(): Record<string, TutorialProgress> {
+  try {
+    const stored = localStorage.getItem(TUTORIALS_PROGRESS_KEY)
+    return stored ? JSON.parse(stored) : {}
+  } catch {
+    return {}
+  }
+}
+
+function saveProgress(progress: Record<string, TutorialProgress>): void {
+  try {
+    localStorage.setItem(TUTORIALS_PROGRESS_KEY, JSON.stringify(progress))
+  } catch {
+    // Storage unavailable
+  }
+}
+
 export default function Tutorials() {
   const [search, setSearch] = useState('')
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
   const [activeTutorial, setActiveTutorial] = useState<string | null>(null)
   const [currentStep, setCurrentStep] = useState(0)
-  const [completedTutorials, setCompletedTutorials] = useState<Set<string>>(new Set())
+  const [difficultyFilter, setDifficultyFilter] = useState<string | null>(null)
+  const [tutorialProgress, setTutorialProgress] = useState<Record<string, TutorialProgress>>(() => loadProgress())
+  const [showCertificate, setShowCertificate] = useState<string | null>(null)
+
+  // Sync progress to localStorage on change
+  useEffect(() => {
+    saveProgress(tutorialProgress)
+  }, [tutorialProgress])
 
   const filteredTutorials = useMemo(() => {
     let result = tutorials
+
     if (selectedCategory) {
       result = result.filter((t) => t.category === selectedCategory)
     }
+
+    if (difficultyFilter) {
+      result = result.filter((t) => t.difficulty === difficultyFilter)
+    }
+
     if (search.trim()) {
       const q = search.toLowerCase()
       result = result.filter(
@@ -230,37 +273,91 @@ export default function Tutorials() {
           t.category.toLowerCase().includes(q)
       )
     }
+
     return result
-  }, [search, selectedCategory])
+  }, [search, selectedCategory, difficultyFilter])
 
   const tutorial = activeTutorial ? tutorials.find((t) => t.id === activeTutorial) : null
 
-  const handleStartTutorial = (id: string) => {
-    setActiveTutorial(id)
-    setCurrentStep(0)
-  }
-
-  const handleNextStep = () => {
-    if (!tutorial) return
-    if (currentStep < tutorial.steps.length - 1) {
-      setCurrentStep((prev) => prev + 1)
+  // Resume or start tutorial
+  const handleStartTutorial = useCallback((id: string) => {
+    const progress = tutorialProgress[id]
+    if (progress && !progress.completed) {
+      // Resume where left off
+      setCurrentStep(progress.currentStep)
     } else {
-      setCompletedTutorials((prev) => new Set(prev).add(tutorial.id))
+      setCurrentStep(0)
+    }
+    setActiveTutorial(id)
+  }, [tutorialProgress])
+
+  const handleNextStep = useCallback(() => {
+    if (!tutorial) return
+
+    const newStep = currentStep + 1
+
+    if (newStep < tutorial.steps.length) {
+      setCurrentStep(newStep)
+      // Save progress
+      setTutorialProgress((prev) => ({
+        ...prev,
+        [tutorial.id]: {
+          tutorialId: tutorial.id,
+          currentStep: newStep,
+          completed: false,
+          lastAccessedAt: new Date().toISOString(),
+          score: Math.round((newStep / tutorial.steps.length) * 100),
+        },
+      }))
+    } else {
+      // Complete tutorial
+      const completedTutorial: TutorialProgress = {
+        tutorialId: tutorial.id,
+        currentStep: 0,
+        completed: true,
+        completedAt: new Date().toISOString(),
+        lastAccessedAt: new Date().toISOString(),
+        score: 100,
+      }
+      setTutorialProgress((prev) => ({
+        ...prev,
+        [tutorial.id]: completedTutorial,
+      }))
+      setShowCertificate(tutorial.id)
       setActiveTutorial(null)
       setCurrentStep(0)
     }
-  }
+  }, [tutorial, currentStep])
 
-  const handlePrevStep = () => {
+  const handlePrevStep = useCallback(() => {
     if (currentStep > 0) {
       setCurrentStep((prev) => prev - 1)
     }
-  }
+  }, [currentStep])
+
+  const handleResetProgress = useCallback(() => {
+    setTutorialProgress({})
+    setShowCertificate(null)
+    showToast({ type: 'success', title: 'All tutorial progress has been reset' })
+  }, [])
+
+  const completedCount = Object.values(tutorialProgress).filter((p) => p.completed).length
 
   const difficultyColors = {
     beginner: 'text-green-500 bg-green-500/10',
     intermediate: 'text-yellow-500 bg-yellow-500/10',
     advanced: 'text-red-500 bg-red-500/10',
+  }
+
+  const difficultyLabels: Record<string, string> = {
+    beginner: 'Beginner',
+    intermediate: 'Intermediate',
+    advanced: 'Advanced',
+  }
+
+  // Calculate estimated completion
+  const getTutorialProgress = (tutorialId: string): TutorialProgress | undefined => {
+    return tutorialProgress[tutorialId]
   }
 
   return (
@@ -269,23 +366,34 @@ export default function Tutorials() {
         <h1 className="text-2xl font-bold text-[rgb(var(--color-text))]">Interactive Tutorials</h1>
         <p className="text-sm text-[rgb(var(--color-text-secondary))] mt-1">
           Step-by-step guides to master every Astra feature
+          {completedCount > 0 && ` • ${completedCount}/${tutorials.length} completed`}
         </p>
       </div>
 
       {/* Search & Filters */}
-      <div className="flex flex-wrap gap-3 mb-6">
-        <input
-          type="text"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          placeholder="Search tutorials..."
-          className="input flex-1 min-w-[200px]"
-        />
+      <div className="flex flex-wrap items-center gap-3 mb-6">
+        <div className="relative flex-1 min-w-[200px]">
+          <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[rgb(var(--color-text-secondary))]" />
+          <input
+            type="text"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search tutorials..."
+            className="input pl-9 text-sm"
+            aria-label="Search tutorials"
+          />
+          {search && (
+            <button onClick={() => setSearch('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-[rgb(var(--color-text-secondary))] hover:text-[rgb(var(--color-text))]">
+              <X size={14} />
+            </button>
+          )}
+        </div>
         <div className="flex flex-wrap gap-2">
+          {/* Category Filters */}
           <button
             onClick={() => setSelectedCategory(null)}
             className={`px-3 py-2 rounded-lg text-xs font-medium transition-all ${
-              !selectedCategory
+              !selectedCategory && !difficultyFilter
                 ? 'bg-astra-600 text-white'
                 : 'bg-[rgb(var(--color-surface))] text-[rgb(var(--color-text-secondary))] hover:text-[rgb(var(--color-text))]'
             }`}
@@ -306,6 +414,34 @@ export default function Tutorials() {
             </button>
           ))}
         </div>
+        {/* Difficulty Filter */}
+        <div className="flex items-center gap-1 border-l border-[rgb(var(--color-border))] pl-3">
+          <Filter size={14} className="text-[rgb(var(--color-text-secondary))]" />
+          {['beginner', 'intermediate', 'advanced'].map((diff) => (
+            <button
+              key={diff}
+              onClick={() => setDifficultyFilter(difficultyFilter === diff ? null : diff)}
+              className={`px-2 py-1 rounded text-[10px] font-medium transition-all capitalize ${
+                difficultyFilter === diff
+                  ? 'bg-astra-600 text-white'
+                  : 'bg-[rgb(var(--color-surface))] text-[rgb(var(--color-text-secondary))]'
+              }`}
+            >
+              {diff}
+            </button>
+          ))}
+        </div>
+        {/* Reset progress */}
+        {completedCount > 0 && (
+          <button
+            onClick={handleResetProgress}
+            className="btn-ghost text-xs text-red-500 hover:text-red-400 flex items-center gap-1"
+            title="Reset all progress"
+          >
+            <RotateCcw size={12} />
+            Reset
+          </button>
+        )}
       </div>
 
       <AnimatePresence mode="wait">
@@ -329,12 +465,17 @@ export default function Tutorials() {
                     <p className="text-sm text-[rgb(var(--color-text-secondary))]">{tutorial.description}</p>
                   </div>
                 </div>
-                <button
-                  onClick={() => setActiveTutorial(null)}
-                  className="btn-ghost text-sm"
-                >
-                  Exit
-                </button>
+                <div className="flex items-center gap-2">
+                  <span className={`px-2 py-0.5 rounded text-[10px] font-medium ${difficultyColors[tutorial.difficulty]}`}>
+                    {tutorial.difficulty}
+                  </span>
+                  <button
+                    onClick={() => setActiveTutorial(null)}
+                    className="btn-ghost text-sm"
+                  >
+                    Exit
+                  </button>
+                </div>
               </div>
 
               {/* Progress Bar */}
@@ -343,7 +484,7 @@ export default function Tutorials() {
                   <span>Progress</span>
                   <span>{currentStep + 1} of {tutorial.steps.length}</span>
                 </div>
-                <div className="h-1.5 bg-[rgb(var(--color-bg))] rounded-full overflow-hidden">
+                <div className="h-2 bg-[rgb(var(--color-bg))] rounded-full overflow-hidden">
                   <motion.div
                     className="h-full bg-gradient-to-r from-astra-500 to-astra-400 rounded-full"
                     initial={{ width: 0 }}
@@ -363,22 +504,35 @@ export default function Tutorials() {
                   className="mb-6"
                 >
                   <div className="flex items-center gap-2 mb-3">
-                    <span className="flex items-center justify-center w-6 h-6 rounded-full bg-astra-600 text-white text-xs font-bold">
+                    <span className="flex items-center justify-center w-7 h-7 rounded-full bg-astra-600 text-white text-xs font-bold">
                       {currentStep + 1}
                     </span>
                     <h3 className="text-base font-semibold text-[rgb(var(--color-text))]">
                       {tutorial.steps[currentStep].title}
                     </h3>
+                    {currentStep === 0 && getTutorialProgress(tutorial.id)?.completed === false && (
+                      <span className="text-xs text-astra-400 flex items-center gap-1">
+                        <ArrowRight size={10} />
+                        Continuing where you left off
+                      </span>
+                    )}
                   </div>
-                  <p className="text-sm text-[rgb(var(--color-text-secondary))] ml-8">
+                  <p className="text-sm text-[rgb(var(--color-text-secondary))] ml-9">
                     {tutorial.steps[currentStep].content}
                   </p>
                   {tutorial.steps[currentStep].action && (
-                    <div className="ml-8 mt-2 flex items-center gap-2 text-xs text-astra-400">
+                    <div className="ml-9 mt-2 flex items-center gap-2 text-xs text-astra-400">
                       <Play size={12} />
                       <span>Action: {tutorial.steps[currentStep].action}</span>
                     </div>
                   )}
+
+                  {/* Interactive Demo placeholder */}
+                  <div className="ml-9 mt-4 p-3 rounded-lg bg-[rgb(var(--color-bg))] border border-[rgb(var(--color-border))] border-dashed">
+                    <p className="text-xs text-[rgb(var(--color-text-secondary))]">
+                      💡 Follow the action above to complete this step. Click "Next" when you're done.
+                    </p>
+                  </div>
                 </motion.div>
               </AnimatePresence>
 
@@ -387,7 +541,7 @@ export default function Tutorials() {
                 <button
                   onClick={handlePrevStep}
                   disabled={currentStep === 0}
-                  className="btn-secondary text-sm"
+                  className="btn-secondary text-sm disabled:opacity-30"
                 >
                   Previous
                 </button>
@@ -396,7 +550,7 @@ export default function Tutorials() {
                     {currentStep + 1} / {tutorial.steps.length}
                   </span>
                   <button onClick={handleNextStep} className="btn-primary text-sm flex items-center gap-1.5">
-                    {currentStep === tutorial.steps.length - 1 ? (
+                    {currentStep >= tutorial.steps.length - 1 ? (
                       <>
                         <CheckCircle size={14} />
                         Complete
@@ -412,75 +566,207 @@ export default function Tutorials() {
               </div>
             </div>
           </motion.div>
+        ) : showCertificate ? (
+          /* Completion Certificate */
+          <motion.div
+            key="certificate"
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.95 }}
+            className="card p-8 text-center max-w-lg mx-auto"
+          >
+            <motion.div
+              initial={{ scale: 0 }}
+              animate={{ scale: 1, rotate: [0, -5, 5, 0] }}
+              transition={{ type: 'spring', stiffness: 300, damping: 15 }}
+              className="w-20 h-20 rounded-full bg-gradient-to-br from-yellow-500 to-orange-600 flex items-center justify-center mx-auto mb-4 shadow-xl shadow-yellow-500/30"
+            >
+              <Award size={40} className="text-white" />
+            </motion.div>
+
+            <h2 className="text-2xl font-bold text-[rgb(var(--color-text))] mb-2">Congratulations!</h2>
+            <p className="text-sm text-[rgb(var(--color-text-secondary))] mb-4">
+              You've completed the{' '}
+              <strong className="text-astra-400">{tutorials.find((t) => t.id === showCertificate)?.title}</strong> tutorial
+            </p>
+
+            <div className="flex items-center justify-center gap-3 mb-4">
+              <div className="flex items-center gap-1 text-yellow-500">
+                <Star size={16} fill="currentColor" />
+                <Star size={16} fill="currentColor" />
+                <Star size={16} fill="currentColor" />
+              </div>
+            </div>
+
+            <div className="p-4 rounded-lg bg-[rgb(var(--color-bg))] border border-[rgb(var(--color-border))] mb-6">
+              <p className="text-xs text-[rgb(var(--color-text-secondary))]">
+                Tutorial completed at {new Date(tutorialProgress[showCertificate]?.completedAt || '').toLocaleString()}
+              </p>
+            </div>
+
+            <div className="flex items-center justify-center gap-3">
+              <button
+                onClick={() => setShowCertificate(null)}
+                className="btn-primary"
+              >
+                Back to Tutorials
+              </button>
+              <button
+                onClick={() => {
+                  const completed = showCertificate
+                  setShowCertificate(null)
+                  setTimeout(() => handleStartTutorial(completed), 100)
+                }}
+                className="btn-secondary"
+              >
+                Retake
+              </button>
+            </div>
+          </motion.div>
         ) : (
           /* Tutorial Grid */
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"
           >
-            {filteredTutorials.map((tutorial) => {
-              const isCompleted = completedTutorials.has(tutorial.id)
-              return (
-                <motion.div
-                  key={tutorial.id}
-                  layout
-                  initial={{ opacity: 0, scale: 0.95 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  className={`card p-4 hover:shadow-md transition-all ${
-                    isCompleted ? 'border-green-500/30' : ''
-                  }`}
-                >
-                  <div className="flex items-start justify-between mb-3">
-                    <div className="flex items-center gap-2">
-                      <div className="w-8 h-8 rounded-lg bg-astra-600/10 flex items-center justify-center text-astra-400">
-                        {tutorial.icon}
-                      </div>
-                      <div>
-                        <h3 className="text-sm font-medium text-[rgb(var(--color-text))]">{tutorial.title}</h3>
-                        <p className="text-xs text-[rgb(var(--color-text-secondary))]">{tutorial.category}</p>
-                      </div>
-                    </div>
-                    {isCompleted && (
-                      <CheckCircle size={16} className="text-green-500" />
-                    )}
-                  </div>
-
-                  <p className="text-xs text-[rgb(var(--color-text-secondary))] mb-3 line-clamp-2">
-                    {tutorial.description}
-                  </p>
-
-                  <div className="flex items-center gap-2 mb-3">
-                    <span className={`px-2 py-0.5 rounded text-[10px] font-medium ${difficultyColors[tutorial.difficulty]}`}>
-                      {tutorial.difficulty}
-                    </span>
-                    <span className="flex items-center gap-1 text-[10px] text-[rgb(var(--color-text-secondary))]">
-                      <Clock size={10} />
-                      {tutorial.duration}
-                    </span>
-                    <span className="flex items-center gap-1 text-[10px] text-[rgb(var(--color-text-secondary))]">
-                      <BarChart3 size={10} />
-                      {tutorial.steps.length} steps
-                    </span>
-                  </div>
-
-                  <button
-                    onClick={() => handleStartTutorial(tutorial.id)}
-                    className="w-full btn-primary text-xs py-1.5 flex items-center justify-center gap-1"
-                  >
-                    <Play size={12} />
-                    {isCompleted ? 'Retake Tutorial' : 'Start Tutorial'}
-                  </button>
-                </motion.div>
-              )
-            })}
-
-            {filteredTutorials.length === 0 && (
-              <div className="col-span-full text-center py-12">
-                <BookOpen size={32} className="text-[rgb(var(--color-text-secondary))] mx-auto mb-2 opacity-50" />
-                <p className="text-sm text-[rgb(var(--color-text-secondary))]">No tutorials found</p>
+            {/* Continue Where You Left Off */}
+            {Object.values(tutorialProgress).some((p) => !p.completed && p.currentStep > 0) && (
+              <div className="mb-6">
+                <h2 className="text-sm font-semibold text-[rgb(var(--color-text))] mb-3 flex items-center gap-2">
+                  <ArrowRight size={14} className="text-astra-400" />
+                  Continue Learning
+                </h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                  {tutorials
+                    .filter((t) => {
+                      const p = tutorialProgress[t.id]
+                      return p && !p.completed && p.currentStep > 0
+                    })
+                    .slice(0, 3)
+                    .map((tutorial) => {
+                      const p = tutorialProgress[tutorial.id]
+                      const progressPercent = p ? Math.round((p.currentStep / tutorial.steps.length) * 100) : 0
+                      return (
+                        <button
+                          key={tutorial.id}
+                          onClick={() => handleStartTutorial(tutorial.id)}
+                          className="card p-3 hover:shadow-md transition-all text-left flex items-center gap-3"
+                        >
+                          <div className="w-8 h-8 rounded-lg bg-astra-600/10 flex items-center justify-center text-astra-400 flex-shrink-0">
+                            {tutorial.icon}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium text-[rgb(var(--color-text))] truncate">{tutorial.title}</p>
+                            <div className="flex items-center gap-2 mt-1">
+                              <div className="flex-1 h-1 bg-[rgb(var(--color-bg))] rounded-full overflow-hidden">
+                                <div
+                                  className="h-full bg-astra-500 rounded-full"
+                                  style={{ width: `${progressPercent}%` }}
+                                />
+                              </div>
+                              <span className="text-[10px] text-[rgb(var(--color-text-secondary))]">{progressPercent}%</span>
+                            </div>
+                          </div>
+                          <ChevronRight size={14} className="text-[rgb(var(--color-text-secondary))] flex-shrink-0" />
+                        </button>
+                      )
+                    })}
+                </div>
               </div>
             )}
+
+            {/* All Tutorials */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {filteredTutorials.map((tutorial) => {
+                const progress = getTutorialProgress(tutorial.id)
+                const isCompleted = progress?.completed ?? false
+                const progressPercent = progress && !isCompleted
+                  ? Math.round((progress.currentStep / tutorial.steps.length) * 100)
+                  : isCompleted ? 100 : 0
+
+                return (
+                  <motion.div
+                    key={tutorial.id}
+                    layout
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    className={`card p-4 hover:shadow-md transition-all ${
+                      isCompleted ? 'border-green-500/30' : ''
+                    } ${progressPercent > 0 && !isCompleted ? 'border-astra-500/20' : ''}`}
+                  >
+                    <div className="flex items-start justify-between mb-3">
+                      <div className="flex items-center gap-2">
+                        <div className="w-8 h-8 rounded-lg bg-astra-600/10 flex items-center justify-center text-astra-400">
+                          {tutorial.icon}
+                        </div>
+                        <div>
+                          <h3 className="text-sm font-medium text-[rgb(var(--color-text))]">{tutorial.title}</h3>
+                          <p className="text-xs text-[rgb(var(--color-text-secondary))]">{tutorial.category}</p>
+                        </div>
+                      </div>
+                      {isCompleted && (
+                        <CheckCircle size={16} className="text-green-500 flex-shrink-0" />
+                      )}
+                      {progressPercent > 0 && !isCompleted && (
+                        <div className="flex items-center gap-1 text-xs text-astra-400">
+                          <BarChart3 size={12} />
+                          {progressPercent}%
+                        </div>
+                      )}
+                    </div>
+
+                    <p className="text-xs text-[rgb(var(--color-text-secondary))] mb-3 line-clamp-2">
+                      {tutorial.description}
+                    </p>
+
+                    {/* Progress bar for in-progress */}
+                    {progressPercent > 0 && !isCompleted && (
+                      <div className="h-1 bg-[rgb(var(--color-bg))] rounded-full overflow-hidden mb-3">
+                        <div
+                          className="h-full bg-astra-500 rounded-full"
+                          style={{ width: `${progressPercent}%` }}
+                        />
+                      </div>
+                    )}
+
+                    <div className="flex items-center gap-2 mb-3">
+                      <span className={`px-2 py-0.5 rounded text-[10px] font-medium ${difficultyColors[tutorial.difficulty]}`}>
+                        {tutorial.difficulty}
+                      </span>
+                      <span className="flex items-center gap-1 text-[10px] text-[rgb(var(--color-text-secondary))]">
+                        <Clock size={10} />
+                        {tutorial.duration}
+                      </span>
+                      <span className="flex items-center gap-1 text-[10px] text-[rgb(var(--color-text-secondary))]">
+                        <BarChart3 size={10} />
+                        {tutorial.steps.length} steps
+                      </span>
+                    </div>
+
+                    <button
+                      onClick={() => handleStartTutorial(tutorial.id)}
+                      className="w-full btn-primary text-xs py-1.5 flex items-center justify-center gap-1"
+                    >
+                      <Play size={12} />
+                      {isCompleted ? 'Retake Tutorial' : progressPercent > 0 ? 'Continue' : 'Start Tutorial'}
+                    </button>
+                  </motion.div>
+                )
+              })}
+
+              {filteredTutorials.length === 0 && (
+                <div className="col-span-full text-center py-12">
+                  <BookOpen size={32} className="text-[rgb(var(--color-text-secondary))] mx-auto mb-2 opacity-50" />
+                  <p className="text-sm text-[rgb(var(--color-text-secondary))]">No tutorials found</p>
+                  <button
+                    onClick={() => { setSearch(''); setSelectedCategory(null); setDifficultyFilter(null) }}
+                    className="text-xs text-astra-400 mt-2 hover:text-astra-300"
+                  >
+                    Clear filters
+                  </button>
+                </div>
+              )}
+            </div>
           </motion.div>
         )}
       </AnimatePresence>

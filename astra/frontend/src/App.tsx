@@ -1,8 +1,9 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
 import { useThemeStore } from './stores/themeStore'
 import { useOnboardingStore } from './stores/onboardingStore'
+import { useAppStore } from './stores/appStore'
 import ErrorBoundary from './components/ErrorBoundary'
 import SplashScreen from './components/SplashScreen'
 import OnboardingWizard from './components/OnboardingWizard'
@@ -19,34 +20,52 @@ import HowAstraWorks from './pages/HowAstraWorks'
 import HelpCenter from './pages/HelpCenter'
 import Tutorials from './pages/Tutorials'
 import NotFound from './pages/NotFound'
+import wsService from './services/websocket'
 
 function App() {
   const { theme } = useThemeStore()
   const { isFirstRun } = useOnboardingStore()
+  const { setConnected } = useAppStore()
   const [showSplash, setShowSplash] = useState(true)
   const [showOnboarding, setShowOnboarding] = useState(false)
   const location = useLocation()
+
+  // Initialize WebSocket connection on mount
+  useEffect(() => {
+    wsService.connect()
+
+    // Listen for connection status changes
+    const unsubStatus = wsService.onStatus((connected) => {
+      setConnected(connected)
+    })
+
+    return () => {
+      unsubStatus()
+    }
+  }, [setConnected])
 
   useEffect(() => {
     document.documentElement.classList.remove('light', 'dark', 'custom')
     document.documentElement.classList.add(theme)
   }, [theme])
 
-  const handleSplashComplete = () => {
+  const handleSplashComplete = useCallback(() => {
     setShowSplash(false)
     if (isFirstRun) {
       setShowOnboarding(true)
     }
-  }
+  }, [isFirstRun])
 
-  const handleOnboardingComplete = () => {
+  const handleOnboardingComplete = useCallback(() => {
     setShowOnboarding(false)
-  }
+  }, [])
 
   return (
     <ErrorBoundary>
+      {/* Only show splash during initial startup */}
       {showSplash && <SplashScreen onComplete={handleSplashComplete} />}
 
+      {/* Only show onboarding after splash completes and on first run */}
       <AnimatePresence mode="wait">
         {showOnboarding && (
           <motion.div
@@ -61,6 +80,7 @@ function App() {
         )}
       </AnimatePresence>
 
+      {/* Main app - render after splash */}
       {!showSplash && !showOnboarding && (
         <Routes>
           <Route path="/login" element={<Login />} />

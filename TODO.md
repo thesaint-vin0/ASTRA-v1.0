@@ -1,35 +1,43 @@
-# Astra Initialization Progress
+# Astra AI Development Progress
 
-## Step 1: Create Python virtual environment at `astra/venv/`
-- [x] Create venv
-- [x] Verify venv created
+## Phase 1 — Complete ✅
+All items verified and signed off.
 
-## Step 2: Install dependencies from `requirements.txt`
-- [x] Install packages (fixed python-jwt==3.3.34 -> 4.1.0)
-- [x] Resolve any conflicts
-- [x] Verify packages installed
+## Phase 2 — First-Run Experience & Intelligent Dashboard (In Progress)
 
-## Step 3: Create `.env` if missing (skip — already exists)
-- [x] .env already exists — skipped
+### Backend Endpoints
+- [ ] `/api/onboarding/check` — System check endpoint
+- [ ] `/api/models/pull` — Pull/download model
+- [ ] `/api/models/remove` — Remove model
+- [ ] `/api/activity` — Recent activity feed
 
-## Step 4: Create `~/.astra/` directory structure
-- [ ] Create directories
-- [ ] Verify directories
+### Part 1 — Enhanced Onboarding Wizard
+- [ ] Welcome: 10 features with animations
+- [ ] System Check: Backend-driven detection + auto-repair
+- [ ] Model Setup: Live Ollama detection, download/delete/compare
+- [ ] Personality: Preview, custom editor, import/export
+- [ ] Memory: Full config with import/export/clear/retention
+- [ ] Voice: Mic/speaker detection, wake word, sensitivity
+- [ ] Permissions: Detailed explanations
+- [ ] Completion: Full system status summary
 
-## Step 5: Create and run initialization script
-- [ ] Write `init_astra.py`
-- [ ] Run SQLite database initialization
-- [ ] Run ChromaDB initialization
-- [ ] Start FastAPI server
-- [ ] Verify `/api/health` returns 200
-- [ ] Verify WebSocket endpoint available
+### Part 2 — Intelligent Dashboard
+- [ ] AI Status widget (model, provider, context, tokens, latency)
+- [ ] System Status widget (backend/ollama/db/chromadb/plugins)
+- [ ] System Metrics widget (CPU/RAM/GPU/Disk/Uptime)
+- [ ] Activity widget (conversations/files/automations/plugins/memory)
+- [ ] Quick Actions bar
+- [ ] Draggable/resizable/hideable grid with localStorage persistence
 
-## Step 6: Check Ollama (not installed)
-- [x] Ollama not installed — skip
+### Part 3 — Frontend Infrastructure
+- [ ] API service updates (new endpoints)
+- [ ] Type definitions (new interfaces)
+- [ ] dashboardStore (widget layout persistence)
+- [ ] chatStore persist middleware
+- [ ] Lazy loading for routes
 
-## Step 7: Verify Playwright browsers
-- [x] Playwright browsers already installed
-
-## Step 8: Generate startup report
-- [ ] Collect all stats
-- [ ] Print formatted report
+### Verification
+- [ ] TypeScript compilation passes
+- [ ] Production build succeeds
+- [ ] No console errors
+- [ ] Phase 2 Completion Report generated

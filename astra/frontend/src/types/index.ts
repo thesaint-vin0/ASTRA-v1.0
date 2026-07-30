@@ -178,6 +178,54 @@ export interface SystemStatus {
   }
 }
 
+// ── System Metrics ──
+
+export interface SystemMetrics {
+  cpu: {
+    usage_percent: number
+    cores: number
+    model: string
+  }
+  memory: {
+    total_gb: number
+    used_gb: number
+    usage_percent: number
+  }
+  gpu: {
+    available: boolean
+    name?: string
+    vram_total_gb?: number
+    vram_used_gb?: number
+    usage_percent?: number
+  }
+  disk: {
+    total_gb: number
+    free_gb: number
+    usage_percent: number
+  }
+  ollama: {
+    status: 'running' | 'not_found' | 'error'
+    version?: string
+    models: string[]
+  }
+  database: {
+    status: 'connected' | 'error'
+    size_mb?: number
+  }
+  chroma: {
+    status: 'initialized' | 'error'
+    document_count?: number
+  }
+  plugins: {
+    total: number
+    active: number
+    errors: number
+  }
+  uptime: number
+  version: string
+  platform: string
+}
+
 // ── Tutorials ──
 
 export interface Tutorial {
@@ -214,6 +262,16 @@ export interface TutorialStep {
   image?: string
 }
 
+// ── Tutorial Progress ──
+
+export interface TutorialProgress {
+  tutorialId: string
+  currentStep: number
+  completed: boolean
+  completedAt?: string
+  lastAccessedAt: string
+}
+
 // ── Help Center ──
 
 export interface HelpArticle {
@@ -238,6 +296,22 @@ export interface SystemCheckItem {
   autoFixAvailable?: boolean
 }
 
+export interface OnboardingCheckResult {
+  python: { status: 'healthy' | 'missing' | 'warning'; version?: string; message: string; fix: string | null }
+  ollama: { status: 'healthy' | 'missing' | 'warning'; version?: string; message: string; models?: string[]; fix: string | null }
+  gpu: { status: 'healthy' | 'missing'; name?: string; vram_gb?: number; message: string; fix: string | null }
+  cpu: { status: 'healthy' | 'warning'; cores?: number; usage_percent?: number; name?: string; message: string; fix: string | null }
+  ram: { status: 'healthy' | 'warning'; total_gb?: number; available_gb?: number; used_gb?: number; percent?: number; message: string; fix: string | null }
+  disk: { status: 'healthy' | 'warning'; total_gb?: number; free_gb?: number; used_gb?: number; percent?: number; message: string; fix: string | null }
+  sqlite: { status: 'healthy' | 'missing' | 'error'; version?: string; message: string; fix: string | null }
+  chroma: { status: 'healthy' | 'missing'; message: string; fix: string | null }
+  playwright: { status: 'healthy' | 'missing'; message: string; fix: string | null }
+  whisper: { status: 'healthy' | 'missing'; message: string; fix: string | null }
+  piper: { status: 'healthy' | 'missing'; message: string; fix: string | null }
+  internet: { status: 'healthy' | 'warning'; message: string; fix: string | null }
+  duration_ms: number
+}
+
 // ── Activity ──
 
 export interface ActivityEvent {
@@ -247,6 +321,33 @@ export interface ActivityEvent {
   description: string
   timestamp: string
   icon?: string
+}
+
+export interface ActivityResponse {
+  activities: ActivityEvent[]
+}
+
+// ── Dashboard Widget ──
+
+export type WidgetType = 'ai-status' | 'system-status' | 'system-metrics' | 'activity' | 'quick-actions'
+export type WidgetSize = 'small' | 'medium' | 'large' | 'full'
+
+export interface DashboardWidget {
+  id: WidgetType
+  type: WidgetType
+  title: string
+  visible: boolean
+  size: WidgetSize
+  order: number
+  x: number
+  y: number
+  w: number
+  h: number
+}
+
+export interface DashboardLayout {
+  widgets: DashboardWidget[]
+  version: number
 }
 
 // ── Automation ──
@@ -309,4 +410,5 @@ declare global {
     electronAPI?: ElectronAPI
   }
 }
+
 

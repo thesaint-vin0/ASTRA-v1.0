@@ -1,4 +1,4 @@
-import type { Conversation, Memory, Model, Plugin, Tool, FileItem, Plan, AppSettings, Personality } from '../types'
+import type { Conversation, Memory, Model, Plugin, Tool, FileItem, Plan, AppSettings, Personality, SystemMetrics, OnboardingCheckResult, ActivityResponse } from '../types'
 
 const API_BASE = '/api'
 
@@ -23,6 +23,11 @@ export const api = {
   // Health
   health: () => request<{ status: string; app: string; version: string }>('/health'),
   status: () => request<{ engine: Record<string, unknown>; config: Record<string, unknown> }>('/status'),
+
+  // System Metrics
+  system: {
+    metrics: () => request<SystemMetrics>('/system/metrics'),
+  },
 
   // Conversations
   conversations: {
@@ -56,6 +61,11 @@ export const api = {
       request<{ results: Memory[]; total: number }>('/memory/search', {
         method: 'POST',
         body: JSON.stringify({ query, memory_type, limit }),
+      }),
+    recent: (limit = 10) =>
+      request<{ results: Memory[]; total: number }>('/memory/recent', {
+        method: 'POST',
+        body: JSON.stringify({ limit }),
       }),
   },
 
@@ -118,4 +128,30 @@ export const api = {
   vision: {
     screenshot: () => request<Record<string, unknown>>('/vision/screenshot', { method: 'POST' }),
   },
+
+  // Onboarding
+  onboarding: {
+    check: () => request<OnboardingCheckResult>('/onboarding/check', { method: 'POST' }),
+  },
+
+  // Activity
+  activity: (limit = 20) => request<ActivityResponse>(`/activity?limit=${limit}`),
+
+  // Model Management
+  modelManager: {
+    pull: (name: string) => {
+      return fetch('/api/models/pull', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name }),
+      })
+    },
+    remove: (name: string) =>
+      request<{ success: boolean }>('/models/remove', {
+        method: 'POST',
+        body: JSON.stringify({ name }),
+      }),
+    health: () => request<Record<string, unknown>>('/models/health'),
+  },
 }
+
