@@ -1,8 +1,10 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Bot } from 'lucide-react'
+import { useRouteFocus } from '../hooks/useRouteFocus'
 
 export default function Login() {
+  const { ref: headingRef } = useRouteFocus()
   const [isLogin, setIsLogin] = useState(true)
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -24,7 +26,7 @@ export default function Login() {
           <div className="w-16 h-16 rounded-2xl bg-astra-600/20 flex items-center justify-center mx-auto mb-4">
             <Bot size={32} className="text-astra-400" />
           </div>
-          <h1 className="text-2xl font-bold text-[rgb(var(--color-text))]">Astra AI</h1>
+          <h1 ref={headingRef} tabIndex={-1} className="text-2xl font-bold text-[rgb(var(--color-text))] focus:outline-none">Astra AI</h1>
           <p className="text-sm text-[rgb(var(--color-text-secondary))] mt-1">
             {isLogin ? 'Welcome back' : 'Create your account'}
           </p>

@@ -3,8 +3,9 @@ import { motion, AnimatePresence } from 'framer-motion'
 import {
   Brain, MessageSquare, Cpu, Network, GitBranch,
   Puzzle, Server, User, ArrowRight, Zap, Activity, BarChart3,
-  ArrowDown, ArrowUp, Info, Box, Link2, Gauge, Play, RefreshCw
+  ArrowDown, ArrowUp, Info, Link2, Play
 } from 'lucide-react'
+import { useRouteFocus } from '../hooks/useRouteFocus'
 
 interface PipelineStep {
   id: string
@@ -213,6 +214,7 @@ const pipelineSteps: PipelineStep[] = [
 ]
 
 export default function HowAstraWorks() {
+  const { ref: headingRef } = useRouteFocus()
   const [activeStep, setActiveStep] = useState<string | null>(null)
   const [hoveredStep, setHoveredStep] = useState<string | null>(null)
   const [isAnimating, setIsAnimating] = useState(false)
@@ -257,7 +259,7 @@ export default function HowAstraWorks() {
   return (
     <div className="p-6 max-w-6xl mx-auto">
       <div className="mb-8">
-        <h1 className="text-2xl font-bold text-[rgb(var(--color-text))]">How Astra Works</h1>
+        <h1 ref={headingRef} tabIndex={-1} className="text-2xl font-bold text-[rgb(var(--color-text))] focus:outline-none">How Astra Works</h1>
         <p className="text-sm text-[rgb(var(--color-text-secondary))] mt-1">
           Explore the architecture and processing pipeline of the Astra AI Operating System
         </p>

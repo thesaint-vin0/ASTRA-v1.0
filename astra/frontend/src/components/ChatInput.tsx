@@ -1,7 +1,6 @@
-import { useState, useRef, useEffect, KeyboardEvent } from 'react'
+import { useState, useRef, useEffect, useCallback, memo, KeyboardEvent } from 'react'
 import { Send, Square, Mic, Image } from 'lucide-react'
 import { useChatStore } from '../stores/chatStore'
-import wsService from '../services/websocket'
 import { showToast } from './Toast'
 
 interface ChatInputProps {
@@ -9,10 +8,10 @@ interface ChatInputProps {
   onCancel: () => void
 }
 
-export default function ChatInput({ onSendMessage, onCancel }: ChatInputProps) {
+function ChatInputComponent({ onSendMessage, onCancel }: ChatInputProps) {
   const [input, setInput] = useState('')
   const textareaRef = useRef<HTMLTextAreaElement>(null)
-  const { isStreaming } = useChatStore()
+  const isStreaming = useChatStore((s) => s.isStreaming)
 
   useEffect(() => {
     if (textareaRef.current) {
@@ -21,27 +20,27 @@ export default function ChatInput({ onSendMessage, onCancel }: ChatInputProps) {
     }
   }, [input])
 
-  const handleSend = () => {
+  const handleSend = useCallback(() => {
     const trimmed = input.trim()
     if (!trimmed || isStreaming) return
     onSendMessage(trimmed)
     setInput('')
-  }
+  }, [input, isStreaming, onSendMessage])
 
-  const handleKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
+  const handleKeyDown = useCallback((e: KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault()
       handleSend()
     }
-  }
+  }, [handleSend])
 
-  const handleVoiceInput = () => {
+  const handleVoiceInput = useCallback(() => {
     showToast({ type: 'info', title: 'Voice input started... Speak now' })
-  }
+  }, [])
 
-  const handleImageUpload = () => {
+  const handleImageUpload = useCallback(() => {
     showToast({ type: 'info', title: 'Image upload', message: 'Feature coming soon' })
-  }
+  }, [])
 
   return (
     <div className="border-t border-[rgb(var(--color-border))] bg-[rgb(var(--color-surface))] p-4">
@@ -88,4 +87,6 @@ export default function ChatInput({ onSendMessage, onCancel }: ChatInputProps) {
     </div>
   )
 }
+
+export default memo(ChatInputComponent)
 

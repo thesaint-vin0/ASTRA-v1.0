@@ -1,16 +1,18 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useCallback } from 'react'
 import { useParams } from 'react-router-dom'
+import { useShallow } from 'zustand/react/shallow'
 import ChatMessage from '../components/ChatMessage'
 import ChatInput from '../components/ChatInput'
 import ConversationList from '../components/ConversationList'
 import { useChatStore } from '../stores/chatStore'
 import wsService from '../services/websocket'
-import { api } from '../services/api'
 import type { Message } from '../types'
 import { Bot } from 'lucide-react'
 import { showToast } from '../components/Toast'
+import { useRouteFocus } from '../hooks/useRouteFocus'
 
 export default function Chat() {
+  const { ref: headingRef } = useRouteFocus()
   const { conversationId } = useParams()
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const {
@@ -21,19 +23,34 @@ export default function Chat() {
     loadConversations,
     selectConversation,
     createConversation,
-    setMessages,
     addMessage,
     appendToStream,
     setIsStreaming,
     clearStream,
-  } = useChatStore()
+  } = useChatStore(useShallow((s) => ({
+    messages: s.messages,
+    isStreaming: s.isStreaming,
+    streamingContent: s.streamingContent,
+    activeConversation: s.activeConversation,
+    loadConversations: s.loadConversations,
+    selectConversation: s.selectConversation,
+    createConversation: s.createConversation,
+    addMessage: s.addMessage,
+    appendToStream: s.appendToStream,
+    setIsStreaming: s.setIsStreaming,
+    clearStream: s.clearStream,
+  })))
 
-  useEffect(() => {
+  const init = useCallback(() => {
     loadConversations()
     if (conversationId) {
       selectConversation(conversationId)
     }
-  }, [conversationId])
+  }, [conversationId, loadConversations, selectConversation])
+
+  useEffect(() => {
+    init()
+  }, [init])
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -134,7 +151,7 @@ export default function Chat() {
               <div className="w-16 h-16 rounded-2xl bg-astra-600/20 flex items-center justify-center mx-auto mb-4">
                 <Bot size={32} className="text-astra-400" />
               </div>
-              <h2 className="text-xl font-semibold text-[rgb(var(--color-text))] mb-2">
+              <h2 ref={headingRef} tabIndex={-1} className="text-xl font-semibold text-[rgb(var(--color-text))] mb-2 focus:outline-none">
                 Start a conversation
               </h2>
               <p className="text-sm text-[rgb(var(--color-text-secondary))]">
@@ -145,12 +162,20 @@ export default function Chat() {
         ) : (
           <div className="flex-1 overflow-y-auto scrollbar-thin p-4 space-y-4">
             <div className="max-w-4xl mx-auto space-y-4">
+              {/* aria-live region for streaming content */}
+              <div aria-live="polite" aria-atomic="false" className="sr-only">
+                {isStreaming && streamingContent
+                  ? `Assistant is typing: ${streamingContent}`
+                  : isStreaming && !streamingContent
+                    ? 'Assistant is thinking.'
+                    : ''}
+              </div>
               {allMessages.map((msg, i) => (
                 <ChatMessage key={msg.id || i} message={msg} />
               ))}
               {isStreaming && !streamingContent && (
-                <div className="flex items-center gap-2 text-[rgb(var(--color-text-secondary))]">
-                  <div className="w-2 h-2 rounded-full bg-astra-500 animate-pulse" />
+                <div className="flex items-center gap-2 text-[rgb(var(--color-text-secondary))]" role="status">
+                  <div className="w-2 h-2 rounded-full bg-astra-500 animate-pulse" aria-hidden="true" />
                   <span className="text-sm">Thinking...</span>
                 </div>
               )}

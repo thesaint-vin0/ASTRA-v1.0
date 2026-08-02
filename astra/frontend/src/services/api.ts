@@ -67,6 +67,8 @@ export const api = {
         method: 'POST',
         body: JSON.stringify({ limit }),
       }),
+    delete: (id: string) =>
+      request<{ success: boolean }>(`/memory/${id}`, { method: 'DELETE' }),
   },
 
   // Models

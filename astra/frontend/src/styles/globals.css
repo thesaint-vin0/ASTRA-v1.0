@@ -17,6 +17,8 @@
     --color-warning: 234 179 8;
     --color-error: 239 68 68;
     --color-info: 59 130 246;
+    /* Accessibility: font scaling base */
+    --font-scale: 1;
   }
 
   .light {
@@ -35,90 +37,130 @@
     --color-info: 37 99 235;
   }
 
-  html {
-    scroll-behavior: smooth;
+  /* Accessibility: High Contrast Mode */
+  .high-contrast {
+    --color-bg: 0 0 0;
+    --color-surface: 10 10 10;
+    --color-surface-hover: 20 20 20;
+    --color-border: 255 255 255;
+    --color-text: 255 255 255;
+    --color-text-secondary: 200 200 200;
+    --color-primary: 130 130 255;
+    --color-primary-hover: 100 100 255;
+    --color-accent: 80 200 255;
+    --color-success: 0 255 0;
+    --color-warning: 255 255 0;
+    --color-error: 255 0 0;
+    --color-info: 0 150 255;
   }
 
-  body {
-    @apply bg-[rgb(var(--color-bg))] text-[rgb(var(--color-text))];
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
+  .light.high-contrast {
+    --color-bg: 255 255 255;
+    --color-surface: 245 245 245;
+    --color-border: 0 0 0;
+    --color-text: 0 0 0;
+    --color-text-secondary: 50 50 50;
+    --color-primary: 0 0 200;
+    --color-primary-hover: 0 0 150;
+  }
+
+  /* Accessibility: Font Scaling */
+  .font-scaled {
+    font-size: calc(1rem * var(--font-scale));
+  }
+
+  /* Accessibility: Reduced Motion */
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+
+    .animate-spin,
+    .animate-pulse,
+    .animate-bounce,
+    .animate-ping {
+      animation: none !important;
+    }
+
+    .motion-safe-animate {
+      animation: none !important;
+      transition: none !important;
+    }
+  }
+
+  /* Accessibility: Focus indicators */
+  *:focus-visible {
+    outline: 2px solid rgb(var(--color-primary));
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+
+  /* Skip navigation link - visually hidden until focused */
+  .skip-nav {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
     overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
   }
 
-  * {
-    @apply border-[rgb(var(--color-border))];
+  .skip-nav:focus {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: auto;
+    height: auto;
+    padding: 12px 24px;
+    margin: 8px;
+    overflow: visible;
+    clip: auto;
   }
 
-  ::selection {
-    background-color: rgb(var(--color-primary) / 0.3);
-    color: rgb(var(--color-text));
+  /* Keyboard navigation mode */
+  .keyboard-nav *:focus {
+    outline: 2px solid rgb(var(--color-primary));
+    outline-offset: 2px;
+    border-radius: 4px;
   }
 
-  :focus-visible {
-    @apply outline-2 outline-offset-2 outline-astra-500;
-  }
-}
+  /* Accessibility: Forced Colors Mode (Windows High Contrast) */
+  @media (forced-colors: active) {
+    *:focus-visible {
+      outline: 2px solid ButtonText;
+      outline-offset: 2px;
+    }
 
-@layer components {
-  .btn-primary {
-    @apply bg-astra-600 hover:bg-astra-700 active:bg-astra-800 text-white font-medium py-2 px-4 rounded-lg
-           transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed
-           focus:outline-none focus:ring-2 focus:ring-astra-500 focus:ring-offset-2
-           focus:ring-offset-[rgb(var(--color-bg))]
-           shadow-sm hover:shadow-md;
-  }
+    .keyboard-nav *:focus {
+      outline: 2px solid Highlight;
+      outline-offset: 2px;
+    }
 
-  .btn-secondary {
-    @apply bg-[rgb(var(--color-surface))] hover:bg-[rgb(var(--color-surface-hover))] text-[rgb(var(--color-text))]
-           font-medium py-2 px-4 rounded-lg border border-[rgb(var(--color-border))]
-           transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed
-           focus:outline-none focus:ring-2 focus:ring-astra-500;
-  }
+    .card,
+    .btn-primary,
+    .btn-secondary,
+    .btn-ghost,
+    .toggle,
+    .input,
+    .skeleton,
+    .badge,
+    .kbd {
+      border: 1px solid ButtonText;
+    }
 
-  .btn-ghost {
-    @apply hover:bg-[rgb(var(--color-surface))] text-[rgb(var(--color-text-secondary))]
-           font-medium rounded-lg transition-all duration-200
-           disabled:opacity-50 disabled:cursor-not-allowed;
-  }
+    .skip-nav:focus {
+      outline: 2px solid Highlight;
+    }
 
-  .btn-icon {
-    @apply btn-ghost p-2;
-  }
-
-  .card {
-    @apply bg-[rgb(var(--color-surface))] rounded-xl border border-[rgb(var(--color-border))]
-           shadow-sm hover:shadow-md transition-shadow duration-200;
-  }
-
-  .card-hover {
-    @apply card hover:border-[rgb(var(--color-primary)/0.3)] hover:shadow-lg;
-  }
-
-  .input {
-    @apply w-full bg-[rgb(var(--color-bg))] border border-[rgb(var(--color-border))]
-           rounded-lg px-4 py-2 text-[rgb(var(--color-text))]
-           placeholder:text-[rgb(var(--color-text-secondary))]
-           focus:outline-none focus:ring-2 focus:ring-astra-500 focus:border-transparent
-           transition-all duration-200;
-  }
-
-  .input-error {
-    @apply input border-red-500 focus:ring-red-500;
-  }
-
-  .select {
-    @apply input appearance-none cursor-pointer;
-  }
-
-  .textarea {
-    @apply input resize-none min-h-[80px];
-  }
-
-  .tag {
-    @apply inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium
-           bg-[rgb(var(--color-surface))] border border-[rgb(var(--color-border))];
+    .progress-bar-fill {
+      background-color: ButtonText;
+    }
   }
 
   .badge {

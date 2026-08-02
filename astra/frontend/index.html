@@ -6,6 +6,19 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Astra AI</title>
     <meta name="description" content="Astra AI Operating System - Your personal AI assistant" />
+    <meta name="theme-color" content="#0f172a" />
+    <meta name="color-scheme" content="dark light" />
+    <!-- Preconnect to backend -->
+    <link rel="preconnect" href="http://127.0.0.1:8642" />
+    <link rel="dns-prefetch" href="http://127.0.0.1:8642" />
+    <!-- Preload critical resources -->
+    <link rel="preload" href="/src/styles/globals.css" as="style" />
+    <link rel="modulepreload" href="/src/main.tsx" />
+    <!-- Preload critical route chunks for faster first navigation -->
+    <link rel="modulepreload" href="/src/pages/Dashboard.tsx" />
+    <link rel="modulepreload" href="/src/pages/Chat.tsx" />
+    <link rel="modulepreload" href="/src/components/Layout.tsx" />
+    <link rel="modulepreload" href="/src/components/Sidebar.tsx" />
   </head>
   <body class="antialiased">
     <div id="root"></div>

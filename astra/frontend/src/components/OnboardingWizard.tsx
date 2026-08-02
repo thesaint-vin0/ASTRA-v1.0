@@ -1,49 +1,16 @@
-import { useState, useCallback, useMemo } from 'react'
+import { useState, useCallback, useRef, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
-  Bot, Shield, Cpu, Wifi, Database, HardDrive, Cctv, CheckCircle, XCircle,
-  AlertTriangle, Download, Mic, Speaker, Eye, Lock, Clipboard, Camera,
+  Bot, Shield, Cpu, Wifi, Database, CheckCircle, XCircle,
+  Mic, Speaker, Eye, Clipboard as ClipboardIcon, Camera,
   Bell, Monitor, Sparkles, ChevronRight, ChevronLeft, Check, Loader2,
-  MessageSquare, Brain, Puzzle, Zap, BookOpen, Server, Globe, Music,
-  Sliders, User, Settings, Volume2, RefreshCw
+  MessageSquare, Brain, Puzzle, Zap, BookOpen, Globe,
+  User, Settings, Volume2, RefreshCw
 } from 'lucide-react'
 import { useOnboardingStore, type OnboardingStep } from '../stores/onboardingStore'
 
 interface OnboardingWizardProps {
   onComplete: () => void
-}
-
-const stepIcons: Record<OnboardingStep, React.ReactNode> = {
-  welcome: <Sparkles size={24} />,
-  system_check: <Monitor size={24} />,
-  model_setup: <Cpu size={24} />,
-  personality: <User size={24} />,
-  memory_config: <Brain size={24} />,
-  voice_setup: <Mic size={24} />,
-  permissions: <Shield size={24} />,
-  complete: <CheckCircle size={24} />,
-}
-
-const stepLabels: Record<OnboardingStep, string> = {
-  welcome: 'Welcome',
-  system_check: 'System Check',
-  model_setup: 'AI Model Setup',
-  personality: 'Personality',
-  memory_config: 'Memory',
-  voice_setup: 'Voice',
-  permissions: 'Permissions',
-  complete: 'Ready!',
-}
-
-const stepDescriptions: Record<OnboardingStep, string> = {
-  welcome: 'Welcome to Astra AI - Your Personal AI Operating System',
-  system_check: 'Verifying your system meets all requirements',
-  model_setup: 'Configure your AI models for optimal performance',
-  personality: 'Choose how Astra interacts with you',
-  memory_config: 'Set up how Astra remembers information',
-  voice_setup: 'Configure voice input and wake word',
-  permissions: 'Review and grant required permissions',
-  complete: 'You\'re all set! Let\'s get started',
 }
 
 const steps: OnboardingStep[] = [
@@ -55,8 +22,15 @@ export default function OnboardingWizard({ onComplete }: OnboardingWizardProps) 
   const [currentStep, setCurrentStep] = useState<OnboardingStep>('welcome')
   const [direction, setDirection] = useState(0)
   const [isProcessing, setIsProcessing] = useState(false)
+  const contentRef = useRef<HTMLDivElement>(null)
 
   const currentIndex = steps.indexOf(currentStep)
+
+  // Move focus to the step heading on each step change so screen readers
+  // and keyboard users know which step loaded.
+  useEffect(() => {
+    contentRef.current?.focus()
+  }, [currentStep])
 
   const goNext = useCallback(() => {
     if (currentIndex < steps.length - 1) {
@@ -86,7 +60,12 @@ export default function OnboardingWizard({ onComplete }: OnboardingWizardProps) 
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex flex-col bg-[rgb(var(--color-bg))]">
+    <div
+      className="fixed inset-0 z-50 flex flex-col bg-[rgb(var(--color-bg))]"
+      role="dialog"
+      aria-modal="true"
+      aria-label="Astra setup wizard"
+    >
       {/* Top progress bar */}
       <div className="h-1 bg-[rgb(var(--color-surface))]">
         <motion.div
@@ -115,7 +94,11 @@ export default function OnboardingWizard({ onComplete }: OnboardingWizardProps) 
 
       {/* Content */}
       <div className="flex-1 overflow-auto">
-        <div className="max-w-2xl mx-auto px-6 py-8">
+        <div
+          ref={contentRef}
+          tabIndex={-1}
+          className="max-w-2xl mx-auto px-6 py-8 focus:outline-none"
+        >
           <AnimatePresence mode="wait" custom={direction}>
             <motion.div
               key={currentStep}
@@ -303,7 +286,6 @@ function SystemCheckStep({
   }, [setIsProcessing])
 
   const allChecked = Object.values(checks).every((c) => c.status === 'checked')
-  const hasErrors = Object.values(checks).some((c) => c.status === 'missing' || c.status === 'error')
 
   return (
     <div>
@@ -693,7 +675,7 @@ function PermissionsStep({ onContinue }: { onContinue: () => void }) {
     { key: 'file_access', icon: <Database size={18} />, title: 'File Access', desc: 'Read and write files for document processing' },
     { key: 'internet', icon: <Globe size={18} />, title: 'Internet', desc: 'Access online resources when needed' },
     { key: 'vision', icon: <Eye size={18} />, title: 'Vision', desc: 'Capture screenshots and analyze images' },
-    { key: 'clipboard', icon: <Clipboard size={18} />, title: 'Clipboard', desc: 'Read and write clipboard contents' },
+    { key: 'clipboard', icon: <ClipboardIcon size={18} />, title: 'Clipboard', desc: 'Read and write clipboard contents' },
     { key: 'camera', icon: <Camera size={18} />, title: 'Camera', desc: 'Access camera for vision features' },
     { key: 'notifications', icon: <Bell size={18} />, title: 'Notifications', desc: 'Show system notifications' },
     { key: 'microphone', icon: <Mic size={18} />, title: 'Microphone', desc: 'Capture audio for voice commands' },

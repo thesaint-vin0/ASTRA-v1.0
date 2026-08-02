@@ -71,7 +71,14 @@ export default function ToastContainer() {
   }, [])
 
   return (
-    <div className="fixed bottom-4 right-4 z-[100] flex flex-col gap-2 max-w-sm w-full pointer-events-none">
+    <div
+      className="fixed bottom-4 right-4 z-[100] flex flex-col gap-2 max-w-sm w-full pointer-events-none"
+      role="region"
+      aria-label="Notifications"
+    >
+      <div aria-live="polite" aria-atomic="false" className="sr-only">
+        {toasts.map((toast) => `${toast.title}${toast.message ? `: ${toast.message}` : ''}`).join('. ')}
+      </div>
       <AnimatePresence mode="popLayout">
         {toasts.map((toast) => (
           <ToastItem key={toast.id} toast={toast} onDismiss={removeToast} />

@@ -383,26 +383,118 @@ export interface ElectronAPI {
   close: () => Promise<void>
   isMaximized: () => Promise<boolean>
   isFocused: () => Promise<boolean>
+  setAlwaysOnTop: (onTop: boolean) => Promise<boolean>
+  isAlwaysOnTop: () => Promise<boolean>
+  setFullScreen: (fullscreen: boolean) => Promise<boolean>
+  isFullScreen: () => Promise<boolean>
+  getAllDisplays: () => Promise<DisplayInfo[]>
+  getCurrentDisplay: () => Promise<DisplayInfo | null>
   onMaximizeChange: (callback: (isMaximized: boolean) => void) => () => void
+  onFullscreenChange: (callback: (isFullscreen: boolean) => void) => () => void
   onCommand: (command: string, callback: () => void) => () => void
+  onMemoryUsage: (callback: (data: MemoryUsage) => void) => () => void
   getVersion: () => Promise<string>
   getName: () => Promise<string>
   getPath: (name: string) => Promise<string>
   quit: () => Promise<void>
   restart: () => Promise<void>
-  getSystemInfo: () => Promise<{
-    platform: string
-    arch: string
-    electronVersion: string
-    nodeVersion: string
-    chromeVersion: string
-  }>
-  showNotification: (opts: { title: string; body: string }) => Promise<void>
+  getSystemInfo: () => Promise<SystemInfo>
+  setProgressBar: (progress: number) => Promise<void>
+  setBadgeCount: (count: number) => Promise<void>
+  getBadgeCount: () => Promise<number>
+  showNotification: (opts: { title: string; body: string; silent?: boolean }) => Promise<boolean>
+  onNotificationClicked: (callback: () => void) => () => void
   openExternal: (url: string) => Promise<void>
   showItemInFolder: (filePath: string) => Promise<void>
   openPath: (filePath: string) => Promise<void>
-  setLaunchOnStartup: (enable: boolean) => Promise<void>
+  setLaunchOnStartup: (enable: boolean, startMinimized?: boolean) => Promise<boolean>
   getLaunchOnStartup: () => Promise<boolean>
+  createDesktopShortcut: () => Promise<{ success: boolean; path?: string; error?: string }>
+  onFileOpenWith: (callback: (filePaths: string[]) => void) => () => void
+  getSettings: () => Promise<AppSettings>
+  setSetting: (key: string, value: unknown) => Promise<boolean>
+  openFileDialog: (options?: DialogOptions) => Promise<DialogResult>
+  openFolderDialog: () => Promise<DialogResult>
+  saveFileDialog: (options?: DialogOptions) => Promise<DialogResult>
+  importFile: (filePath: string) => Promise<FileImportResult>
+  processDroppedFiles: (filePaths: string[]) => Promise<ProcessDroppedResult>
+  restoreSession: () => Promise<SessionResult>
+  saveSession: (session: Record<string, unknown>) => Promise<{ success: boolean; error?: string }>
+  clearSession: () => Promise<{ success: boolean; error?: string }>
+getFeatures: () => Promise<Record<string, boolean>>
+  isFeatureEnabled: (name: string) => Promise<boolean>
+  createBackup: () => Promise<{ success: boolean }>
+  listBackups: () => Promise<{ success: boolean; backups?: string[]; error?: string }>
+  restoreBackup: (filename: string) => Promise<{ success: boolean; error?: string }>
+  getCrashLogs: () => Promise<{ success: boolean; logs?: string; error?: string }>
+  clearCrashLogs: () => Promise<{ success: boolean; error?: string }>
+
+  // "Open with Astra" — file association support (drain pending paths queued before renderer was ready)
+  getPendingOpenPaths: () => Promise<string[]>
+}
+
+export interface DisplayInfo {
+  id: number
+  bounds: { x: number; y: number; width: number; height: number }
+  workArea: { x: number; y: number; width: number; height: number }
+  size: { width: number; height: number }
+  scaleFactor: number
+  isPrimary: boolean
+}
+
+export interface SystemInfo {
+  platform: string
+  arch: string
+  electronVersion: string
+  nodeVersion: string
+  chromeVersion: string
+}
+
+export interface MemoryUsage {
+  heapUsed: number
+  heapTotal: number
+  external: number
+  arrayBuffers: number
+}
+
+export interface DialogOptions {
+  filters?: Array<{ name: string; extensions: string[] }>
+  defaultPath?: string
+}
+
+export interface DialogResult {
+  canceled: boolean
+  filePaths: string[]
+  bookmark?: string
+}
+
+export interface FileImportResult {
+  success: boolean
+  file?: {
+    name: string
+    path: string
+    size: number
+    ext: string
+    content: string
+  }
+  error?: string
+}
+
+export interface ProcessDroppedResult {
+  success: boolean
+  files: Array<{
+    name: string
+    path: string
+    type: 'file' | 'directory'
+    ext?: string
+    size: number
+  }>
+  error?: string
+}
+
+export interface SessionResult {
+  success: boolean
+  session: Record<string, unknown> | null
 }
 
 declare global {
@@ -410,5 +502,3 @@ declare global {
     electronAPI?: ElectronAPI
   }
 }
-
-

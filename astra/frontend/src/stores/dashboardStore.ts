@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
-import type { DashboardWidget, WidgetType, WidgetSize } from '../types'
+import type { DashboardWidget, WidgetSize } from '../types'
 
 export type DashboardWidgetType = 'ai-status' | 'system-status' | 'system-metrics' | 'activity' | 'quick-actions'
 

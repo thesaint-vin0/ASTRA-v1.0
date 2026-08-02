@@ -1,43 +1,55 @@
-# Astra AI Development Progress
+# Phase 3 — Finalization (Stages 4–9) Implementation Tracker
 
-## Phase 1 — Complete ✅
-All items verified and signed off.
+## Stage 4 — Accessibility
+- [ ] Keyboard navigation for Memory items
+- [ ] Keyboard navigation for Files page
+- [ ] Roving tabindex
+- [ ] `@media (forced-colors: active)` CSS support
+- [ ] Developer Diagnostics page (`/devtools`, resolves broken sidebar link)
+- [ ] Add `/devtools` route to App.tsx
+- [ ] Validate: tsc --noEmit, eslint, build
 
-## Phase 2 — First-Run Experience & Intelligent Dashboard (In Progress)
+## Stage 5 — Native Desktop
+- [ ] File associations (package.json electron-builder config)
+- [ ] Open With Astra (single-instance + open-file handlers in electron/main.js)
+- [ ] Desktop shortcut creation IPC
+- [ ] Taskbar progress integration
+- [ ] Dock/taskbar badge counts
+- [ ] Native desktop settings in Settings page
+- [ ] Validate: tsc --noEmit, eslint, build
 
-### Backend Endpoints
-- [ ] `/api/onboarding/check` — System check endpoint
-- [ ] `/api/models/pull` — Pull/download model
-- [ ] `/api/models/remove` — Remove model
-- [ ] `/api/activity` — Recent activity feed
+## Stage 6 — Stability
+- [ ] Recovery Center UI in Settings
+- [ ] Backup management UI
+- [ ] Crash log viewer
+- [ ] Shutdown confirmation with active tasks
+- [ ] SIGTERM/SIGINT handling
+- [ ] Active task tracking IPC
+- [ ] Validate: tsc --noEmit, eslint, build
 
-### Part 1 — Enhanced Onboarding Wizard
-- [ ] Welcome: 10 features with animations
-- [ ] System Check: Backend-driven detection + auto-repair
-- [ ] Model Setup: Live Ollama detection, download/delete/compare
-- [ ] Personality: Preview, custom editor, import/export
-- [ ] Memory: Full config with import/export/clear/retention
-- [ ] Voice: Mic/speaker detection, wake word, sensitivity
-- [ ] Permissions: Detailed explanations
-- [ ] Completion: Full system status summary
+## Stage 7 — Desktop UX
+- [ ] EmptyState component
+- [ ] OfflineState component
+- [ ] Skeleton integration across pages
+- [ ] Consistent loading/empty/error states
+- [ ] Animation polish + reduced-motion
+- [ ] Validate: tsc --noEmit, eslint, build
 
-### Part 2 — Intelligent Dashboard
-- [ ] AI Status widget (model, provider, context, tokens, latency)
-- [ ] System Status widget (backend/ollama/db/chromadb/plugins)
-- [ ] System Metrics widget (CPU/RAM/GPU/Disk/Uptime)
-- [ ] Activity widget (conversations/files/automations/plugins/memory)
-- [ ] Quick Actions bar
-- [ ] Draggable/resizable/hideable grid with localStorage persistence
+## Stage 8 — Documentation
+- [ ] Accessibility Report
+- [ ] Native Desktop Report
+- [ ] Electron Security Report
+- [ ] Technical Debt Report
+- [ ] Production Readiness Report
+- [ ] Phase 3 Completion Report
 
-### Part 3 — Frontend Infrastructure
-- [ ] API service updates (new endpoints)
-- [ ] Type definitions (new interfaces)
-- [ ] dashboardStore (widget layout persistence)
-- [ ] chatStore persist middleware
-- [ ] Lazy loading for routes
+## Stage 9 — Final Validation
+- [ ] Electron launch test
+- [ ] Runtime smoke test
+- [ ] Memory stability verification
+- [ ] WebSocket interruption test
+- [ ] Session recovery test
+- [ ] Accessibility verification
+- [ ] Native desktop verification
+- [ ] Update all TODO trackers
 
-### Verification
-- [ ] TypeScript compilation passes
-- [ ] Production build succeeds
-- [ ] No console errors
-- [ ] Phase 2 Completion Report generated

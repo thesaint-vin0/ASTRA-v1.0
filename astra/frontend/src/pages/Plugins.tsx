@@ -1,9 +1,11 @@
 import { useState, useEffect } from 'react'
-import { Puzzle, Package, Download, Trash2, RefreshCw, ToggleLeft, ToggleRight, Info } from 'lucide-react'
+import { Puzzle, Package, Trash2, RefreshCw, ToggleLeft, ToggleRight } from 'lucide-react'
 import { api } from '../services/api'
+import { useRouteFocus } from '../hooks/useRouteFocus'
 import type { Plugin } from '../types'
 
 export default function Plugins() {
+  const { ref: headingRef } = useRouteFocus()
   const [plugins, setPlugins] = useState<Plugin[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -38,7 +40,7 @@ export default function Plugins() {
     <div className="p-6 max-w-6xl mx-auto">
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-[rgb(var(--color-text))]">Plugin Manager</h1>
+          <h1 ref={headingRef} tabIndex={-1} className="text-2xl font-bold text-[rgb(var(--color-text))] focus:outline-none">Plugin Manager</h1>
           <p className="text-sm text-[rgb(var(--color-text-secondary))] mt-1">
             {plugins.length} plugin{plugins.length !== 1 ? 's' : ''} installed
           </p>

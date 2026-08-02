@@ -4,9 +4,10 @@ import {
   MessageSquare, Mic, Eye, Code, BookOpen, GitBranch,
   Zap, Puzzle, Brain, FileText, Cpu, Cloud, CheckCircle,
   Play, ArrowRight, Clock, BarChart3, Search, Filter,
-  Award, RotateCcw, X, ChevronRight, Star, Bookmark
+  Award, RotateCcw, X, ChevronRight, Star
 } from 'lucide-react'
 import { showToast } from '../components/Toast'
+import { useRouteFocus } from '../hooks/useRouteFocus'
 
 interface TutorialStep {
   title: string
@@ -240,6 +241,7 @@ function saveProgress(progress: Record<string, TutorialProgress>): void {
 }
 
 export default function Tutorials() {
+  const { ref: headingRef } = useRouteFocus()
   const [search, setSearch] = useState('')
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
   const [activeTutorial, setActiveTutorial] = useState<string | null>(null)
@@ -363,7 +365,7 @@ export default function Tutorials() {
   return (
     <div className="p-6 max-w-6xl mx-auto">
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-[rgb(var(--color-text))]">Interactive Tutorials</h1>
+        <h1 ref={headingRef} tabIndex={-1} className="text-2xl font-bold text-[rgb(var(--color-text))] focus:outline-none">Interactive Tutorials</h1>
         <p className="text-sm text-[rgb(var(--color-text-secondary))] mt-1">
           Step-by-step guides to master every Astra feature
           {completedCount > 0 && ` • ${completedCount}/${tutorials.length} completed`}

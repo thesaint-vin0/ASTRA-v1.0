@@ -1,11 +1,11 @@
-import { useState, useMemo, useCallback, useEffect } from 'react'
+import { useState, useMemo, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
-  Search, Book, Command, AlertTriangle, Puzzle, Cpu, MessageSquare, Brain,
-  Mic, Eye, Zap, FileText, HelpCircle, ChevronRight, ExternalLink, Copy,
-  Check, ChevronDown, ChevronUp, Clock, Star, History, Keyboard, Code
+  Search, Book, Command, ChevronRight, ExternalLink, Copy,
+  Check, ChevronDown, ChevronUp, Star, History, Keyboard
 } from 'lucide-react'
 import { showToast } from '../components/Toast'
+import { useRouteFocus } from '../hooks/useRouteFocus'
 
 interface HelpArticle {
   id: string
@@ -164,6 +164,7 @@ function saveToStorage(key: string, value: unknown): void {
 }
 
 export default function HelpCenter() {
+  const { ref: headingRef } = useRouteFocus()
   const [search, setSearch] = useState('')
   const [selectedArticle, setSelectedArticle] = useState<string | null>(null)
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
@@ -388,7 +389,7 @@ export default function HelpCenter() {
   return (
     <div className="p-6 max-w-6xl mx-auto">
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-[rgb(var(--color-text))]">Help Center</h1>
+        <h1 ref={headingRef} tabIndex={-1} className="text-2xl font-bold text-[rgb(var(--color-text))] focus:outline-none">Help Center</h1>
         <p className="text-sm text-[rgb(var(--color-text-secondary))] mt-1">
           Search documentation, tutorials, and troubleshooting guides
         </p>

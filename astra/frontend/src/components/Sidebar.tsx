@@ -1,4 +1,5 @@
 import { useNavigate, useLocation } from 'react-router-dom'
+import { useShallow } from 'zustand/react/shallow'
 import { useAppStore, type SidebarView } from '../stores/appStore'
 import {
   MessageSquare,
@@ -8,7 +9,6 @@ import {
   Puzzle,
   Settings,
   LayoutDashboard,
-  BookOpen,
   HelpCircle,
   GraduationCap,
   Wrench,
@@ -39,7 +39,10 @@ interface SidebarProps {
 export default function Sidebar({ onCollapse }: SidebarProps) {
   const navigate = useNavigate()
   const location = useLocation()
-  const { setSidebarView, sidebarOpen, setSidebarOpen } = useAppStore()
+  const { setSidebarView, sidebarOpen } = useAppStore(useShallow((s) => ({
+    setSidebarView: s.setSidebarView,
+    sidebarOpen: s.sidebarOpen,
+  })))
   const [collapsed, setCollapsed] = useState(false)
 
   const isActive = (path: string) => {
@@ -64,6 +67,8 @@ export default function Sidebar({ onCollapse }: SidebarProps) {
       className={`${
         collapsed ? 'w-14' : 'w-56'
       } bg-[rgb(var(--color-surface))] border-r border-[rgb(var(--color-border))] flex flex-col overflow-hidden transition-all duration-300 ease-in-out`}
+      role="navigation"
+      aria-label="Main navigation"
     >
       {/* Collapse toggle */}
       <div className={`p-2 flex ${collapsed ? 'justify-center' : 'justify-between items-center'}`}>
@@ -75,6 +80,8 @@ export default function Sidebar({ onCollapse }: SidebarProps) {
                 ? 'bg-astra-600 text-white'
                 : 'text-[rgb(var(--color-text-secondary))] hover:bg-[rgb(var(--color-bg))] hover:text-[rgb(var(--color-text))]'
             }`}
+            aria-label="Go to Dashboard"
+            aria-current={isActive('/dashboard') ? 'page' : undefined}
           >
             <LayoutDashboard size={18} />
             <span className="text-sm font-medium">Dashboard</span>
@@ -84,6 +91,7 @@ export default function Sidebar({ onCollapse }: SidebarProps) {
           onClick={toggleCollapsed}
           className="btn-icon text-[rgb(var(--color-text-secondary))] hover:text-[rgb(var(--color-text))]"
           title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+          aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
         >
           <ChevronLeft
             size={16}
@@ -101,7 +109,7 @@ export default function Sidebar({ onCollapse }: SidebarProps) {
             </p>
           </div>
         )}
-        <nav className={`px-2 space-y-0.5 ${collapsed ? 'flex flex-col items-center' : ''}`}>
+        <nav className={`px-2 space-y-0.5 ${collapsed ? 'flex flex-col items-center' : ''}`} aria-label="Primary">
           {mainNavItems.map((item) => (
             <button
               key={item.view}
@@ -114,6 +122,8 @@ export default function Sidebar({ onCollapse }: SidebarProps) {
                   : 'text-[rgb(var(--color-text-secondary))] hover:bg-[rgb(var(--color-bg))] hover:text-[rgb(var(--color-text))]'
               }`}
               title={collapsed ? item.label : undefined}
+              aria-label={item.label}
+              aria-current={isActive(item.path) ? 'page' : undefined}
             >
               {item.icon}
               {!collapsed && <span className="text-sm font-medium">{item.label}</span>}
@@ -130,7 +140,7 @@ export default function Sidebar({ onCollapse }: SidebarProps) {
               </p>
             </div>
           )}
-          <nav className={`px-2 space-y-0.5 ${collapsed ? 'flex flex-col items-center' : ''}`}>
+          <nav className={`px-2 space-y-0.5 ${collapsed ? 'flex flex-col items-center' : ''}`} aria-label="Learning">
             {learnNavItems.map((item) => (
               <button
                 key={item.view}
@@ -143,6 +153,8 @@ export default function Sidebar({ onCollapse }: SidebarProps) {
                     : 'text-[rgb(var(--color-text-secondary))] hover:bg-[rgb(var(--color-bg))] hover:text-[rgb(var(--color-text))]'
                 }`}
                 title={collapsed ? item.label : undefined}
+                aria-label={item.label}
+                aria-current={isActive(item.path) ? 'page' : undefined}
               >
                 {item.icon}
                 {!collapsed && <span className="text-sm font-medium">{item.label}</span>}
@@ -151,7 +163,7 @@ export default function Sidebar({ onCollapse }: SidebarProps) {
           </nav>
         </div>
 
-        {/* Developer Tools */}
+{/* Developer Tools */}
         <div className="mt-4">
           {!collapsed && (
             <div className="px-3 mb-1">
@@ -160,7 +172,7 @@ export default function Sidebar({ onCollapse }: SidebarProps) {
               </p>
             </div>
           )}
-          <nav className={`px-2 space-y-0.5 ${collapsed ? 'flex flex-col items-center' : ''}`}>
+          <nav className={`px-2 space-y-0.5 ${collapsed ? 'flex flex-col items-center' : ''}`} aria-label="Developer">
             <button
               onClick={() => navigate('/devtools')}
               className={`flex items-center gap-3 w-full px-3 py-2 rounded-lg transition-all duration-200 ${
@@ -171,6 +183,7 @@ export default function Sidebar({ onCollapse }: SidebarProps) {
                   : 'text-[rgb(var(--color-text-secondary))] hover:bg-[rgb(var(--color-bg))] hover:text-[rgb(var(--color-text))]'
               }`}
               title={collapsed ? 'Developer Tools' : undefined}
+              aria-label="Developer Tools"
             >
               <Wrench size={18} />
               {!collapsed && <span className="text-sm font-medium">Developer Tools</span>}
@@ -186,7 +199,7 @@ export default function Sidebar({ onCollapse }: SidebarProps) {
             Astra AI v0.1.0
           </p>
           <div className="flex items-center gap-1 mt-1">
-            <div className="w-1.5 h-1.5 rounded-full bg-green-500" />
+            <div className="w-1.5 h-1.5 rounded-full bg-green-500" aria-hidden="true" />
             <span className="text-[10px] text-[rgb(var(--color-text-secondary))]">All systems operational</span>
           </div>
         </div>
@@ -194,4 +207,3 @@ export default function Sidebar({ onCollapse }: SidebarProps) {
     </aside>
   )
 }
-

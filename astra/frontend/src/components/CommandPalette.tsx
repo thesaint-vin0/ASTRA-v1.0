@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useNavigate } from 'react-router-dom'
 import { Search, MessageSquare, Settings, Cpu, Brain, FolderOpen, Puzzle, BookOpen, HelpCircle, Command } from 'lucide-react'
+import { useFocusTrap } from '../hooks/useFocusTrap'
 
 interface CommandItem {
   id: string
@@ -19,6 +20,7 @@ export default function CommandPalette() {
   const [selectedIndex, setSelectedIndex] = useState(0)
   const inputRef = useRef<HTMLInputElement>(null)
   const navigate = useNavigate()
+  const { trapRef } = useFocusTrap(open)
 
   const commands: CommandItem[] = [
     { id: 'new-chat', label: 'New Conversation', description: 'Start a new chat', icon: <MessageSquare size={16} />, action: () => navigate('/chat'), category: 'Navigation' },
@@ -90,19 +92,26 @@ export default function CommandPalette() {
           exit={{ opacity: 0 }}
           transition={{ duration: 0.15 }}
           className="fixed inset-0 z-[200] flex items-start justify-center pt-[15vh]"
-          onClick={() => setOpen(false)}
         >
           {/* Backdrop */}
-          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
+          <div
+            className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+            onClick={() => setOpen(false)}
+            aria-hidden="true"
+          />
 
           {/* Palette */}
           <motion.div
+            ref={trapRef}
             initial={{ opacity: 0, scale: 0.95, y: -20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: -20 }}
             transition={{ type: 'spring', stiffness: 400, damping: 30 }}
             onClick={(e) => e.stopPropagation()}
             className="relative w-full max-w-lg bg-[rgb(var(--color-surface))] border border-[rgb(var(--color-border))] rounded-xl shadow-2xl overflow-hidden"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Command palette"
           >
             {/* Search */}
             <div className="flex items-center gap-3 px-4 py-3 border-b border-[rgb(var(--color-border))]">

@@ -255,6 +255,14 @@ async def search_memory(request: MemorySearch, engine: AIEngine = Depends(get_en
         return {"results": results, "total": len(results)}
 
 
+@router.delete("/memory/{memory_id}")
+async def delete_memory(memory_id: str, engine: AIEngine = Depends(get_engine)):
+    """Delete a specific memory entry."""
+    async with engine.db_manager.get_async_session() as db:
+        await engine.memory_engine.forget(memory_id, db_session=db)
+        return {"success": True}
+
+
 @router.get("/models")
 async def list_models(engine: AIEngine = Depends(get_engine)):
     models = await engine.model_manager.list_available_models()

@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback, memo, useMemo, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   MessageSquare, Brain, Cpu, Activity, Server, Zap,
@@ -8,6 +8,7 @@ import {
 } from 'lucide-react'
 import { api } from '../services/api'
 import { useAppStore } from '../stores/appStore'
+import { useRouteFocus } from '../hooks/useRouteFocus'
 import type { SystemMetrics, ActivityEvent } from '../types'
 
 function formatUptime(seconds: number): string {
@@ -17,7 +18,7 @@ function formatUptime(seconds: number): string {
   return d > 0 ? `${d}d ${h}h` : h > 0 ? `${h}h ${m}m` : `${m}m`
 }
 
-function TimeAgo({ timestamp }: { timestamp: string }) {
+const TimeAgo = memo(function TimeAgo({ timestamp }: { timestamp: string }) {
   const diff = Date.now() - new Date(timestamp).getTime()
   const mins = Math.floor(diff / 60000)
   const hrs = Math.floor(mins / 60)
@@ -26,9 +27,9 @@ function TimeAgo({ timestamp }: { timestamp: string }) {
   else if (hrs < 24) text = `${hrs}h ago`
   else text = `${Math.floor(hrs / 24)}d ago`
   return <span className="text-[10px] text-[rgb(var(--color-text-secondary))]">{text}</span>
-}
+})
 
-function StatusBadge({ status, label }: { status: string; label: string }) {
+const StatusBadge = memo(function StatusBadge({ status, label }: { status: string; label: string }) {
   const colorMap: Record<string, string> = {
     running: 'bg-green-500/10 text-green-500 border-green-500/20',
     connected: 'bg-green-500/10 text-green-500 border-green-500/20',
@@ -49,9 +50,9 @@ function StatusBadge({ status, label }: { status: string; label: string }) {
       {label}
     </div>
   )
-}
+})
 
-function ActivityIcon({ type }: { type: string }) {
+const ActivityIcon = memo(function ActivityIcon({ type }: { type: string }) {
   const icons: Record<string, React.ReactNode> = {
     conversation: <MessageSquare size={12} className="text-blue-500" />,
     memory: <Brain size={12} className="text-purple-500" />,
@@ -63,9 +64,9 @@ function ActivityIcon({ type }: { type: string }) {
     file: <FileText size={12} className="text-yellow-500" />,
   }
   return <>{icons[type] ?? <Activity size={12} />}</>
-}
+})
 
-function GaugeChart({ value, label, color }: { value: number; label: string; color: string }) {
+const GaugeChart = memo(function GaugeChart({ value, label, color }: { value: number; label: string; color: string }) {
   const clamped = Math.min(Math.max(value, 0), 100)
   const circ = 138.2
   const offset = circ - (clamped / 100) * circ
@@ -80,9 +81,9 @@ function GaugeChart({ value, label, color }: { value: number; label: string; col
       <span className="text-[10px] text-[rgb(var(--color-text-secondary))]">{label}</span>
     </div>
   )
-}
+})
 
-function AiStatusWidget({ isConnected, metrics }: { isConnected: boolean; metrics: SystemMetrics | null }) {
+const AiStatusWidget = memo(function AiStatusWidget({ isConnected, metrics }: { isConnected: boolean; metrics: SystemMetrics | null }) {
   const navigate = useNavigate()
   return (
     <div className="card p-4">
@@ -121,17 +122,17 @@ function AiStatusWidget({ isConnected, metrics }: { isConnected: boolean; metric
       </div>
     </div>
   )
-}
+})
 
-function SystemStatusWidget({ metrics }: { metrics: SystemMetrics | null }) {
-  const items = [
+const SystemStatusWidget = memo(function SystemStatusWidget({ metrics }: { metrics: SystemMetrics | null }) {
+  const items = useMemo(() => [
     { label: 'Backend', status: metrics ? 'running' : 'error', detail: metrics?.version },
     { label: 'Ollama', status: metrics?.ollama.status ?? 'not_found', detail: metrics?.ollama.version },
     { label: 'Database', status: metrics?.database.status ?? 'error', detail: metrics?.database.size_mb ? `${metrics.database.size_mb}MB` : '' },
     { label: 'Vector Store', status: metrics?.chroma.status ?? 'error', detail: metrics?.chroma.document_count ? `${metrics.chroma.document_count} docs` : '' },
     { label: 'GPU', status: metrics?.gpu.available ? 'running' : 'missing', detail: metrics?.gpu.available ? metrics.gpu.name : 'Not available' },
     { label: 'Plugins', status: (metrics?.plugins.errors ?? 0) > 0 ? 'error' : 'running', detail: `${metrics?.plugins.active ?? 0} active` },
-  ]
+  ], [metrics])
   return (
     <div className="card p-4">
       <h3 className="text-sm font-semibold mb-3 flex items-center gap-1.5 text-[rgb(var(--color-text))]">
@@ -150,9 +151,9 @@ function SystemStatusWidget({ metrics }: { metrics: SystemMetrics | null }) {
       </div>
     </div>
   )
-}
+})
 
-function SystemMetricsWidget({ metrics }: { metrics: SystemMetrics | null }) {
+const SystemMetricsWidget = memo(function SystemMetricsWidget({ metrics }: { metrics: SystemMetrics | null }) {
   return (
     <div className="card p-4 lg:col-span-2">
       <div className="flex items-center justify-between mb-4">
@@ -192,9 +193,9 @@ function SystemMetricsWidget({ metrics }: { metrics: SystemMetrics | null }) {
       </div>
     </div>
   )
-}
+})
 
-function ActivityFeedWidget({ activity }: { activity: ActivityEvent[] }) {
+const ActivityFeedWidget = memo(function ActivityFeedWidget({ activity }: { activity: ActivityEvent[] }) {
   return (
     <div className="card p-4">
       <div className="flex items-center justify-between mb-3">
@@ -221,11 +222,11 @@ function ActivityFeedWidget({ activity }: { activity: ActivityEvent[] }) {
       </div>
     </div>
   )
-}
+})
 
-function QuickActionsWidget() {
+const QuickActionsWidget = memo(function QuickActionsWidget() {
   const navigate = useNavigate()
-  const actions = [
+  const actions = useMemo(() => [
     { label: 'New Chat', icon: <MessageSquare size={14} />, path: '/chat', color: 'text-blue-500 bg-blue-500/10' },
     { label: 'Memory', icon: <Brain size={14} />, path: '/memory', color: 'text-purple-500 bg-purple-500/10' },
     { label: 'Models', icon: <Cpu size={14} />, path: '/models', color: 'text-green-500 bg-green-500/10' },
@@ -235,7 +236,7 @@ function QuickActionsWidget() {
     { label: 'Tutorials', icon: <GraduationCap size={14} />, path: '/tutorials', color: 'text-orange-500 bg-orange-500/10' },
     { label: 'Help', icon: <HelpCircle size={14} />, path: '/help', color: 'text-cyan-500 bg-cyan-500/10' },
     { label: 'How It Works', icon: <BookOpen size={14} />, path: '/how-it-works', color: 'text-indigo-500 bg-indigo-500/10' },
-  ]
+  ], [])
   return (
     <div className="card p-4">
       <h3 className="text-sm font-semibold mb-3 flex items-center gap-1.5 text-[rgb(var(--color-text))]">
@@ -252,56 +253,112 @@ function QuickActionsWidget() {
       </div>
     </div>
   )
-}
+})
+
+// In-flight request deduplication + stale-while-revalidate
+let inFlight: Promise<[SystemMetrics, ActivityEvent[]]> | null = null
 
 export default function Dashboard() {
   const navigate = useNavigate()
-  const { isConnected } = useAppStore()
+  const { ref: headingRef } = useRouteFocus()
+  const isConnected = useAppStore((s) => s.isConnected)
   const [metrics, setMetrics] = useState<SystemMetrics | null>(null)
   const [activity, setActivity] = useState<ActivityEvent[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [refreshing, setRefreshing] = useState(false)
+  const [isStale, setIsStale] = useState(false)
 
   const fetchData = useCallback(async () => {
-    try {
+    // Skip fetching when tab is hidden to reduce CPU/network usage
+    if (document.hidden) return
+    // Deduplicate concurrent in-flight requests (stale-while-revalidate)
+    if (inFlight) return inFlight
+    inFlight = (async () => {
       const m = await api.system.metrics()
       const a = await api.activity(20)
+      return [m, a.activities ?? []] as [SystemMetrics, ActivityEvent[]]
+    })()
+    try {
+      const [m, a] = await inFlight
       setMetrics(m)
-      setActivity(a.activities ?? [])
+      setActivity(a)
       setError(null)
     } catch (err) {
       setError((err as Error).message)
     } finally {
+      inFlight = null
       setLoading(false)
       setRefreshing(false)
     }
   }, [])
 
+  const debouncedFetchRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const debouncedFetch = useCallback(() => {
+    if (debouncedFetchRef.current) clearTimeout(debouncedFetchRef.current)
+    debouncedFetchRef.current = setTimeout(() => fetchData(), 200)
+  }, [fetchData])
+
+  useEffect(() => {
+    return () => {
+      if (debouncedFetchRef.current) clearTimeout(debouncedFetchRef.current)
+    }
+  }, [])
+
   useEffect(() => {
     fetchData()
-    const interval = setInterval(fetchData, 15000)
-    return () => clearInterval(interval)
-  }, [fetchData])
+    let interval: ReturnType<typeof setInterval> | null = setInterval(() => debouncedFetch(), 15000)
+    // Pause interval when tab is hidden
+    const handleVisibility = () => {
+      if (document.hidden) {
+        if (interval) {
+          clearInterval(interval)
+          interval = null
+        }
+      } else {
+        // Mark data as stale then refresh in the background
+        setIsStale(true)
+        fetchData().finally(() => setIsStale(false))
+        if (!interval) {
+          interval = setInterval(() => debouncedFetch(), 15000)
+        }
+      }
+    }
+    document.addEventListener('visibilitychange', handleVisibility)
+
+    return () => {
+      if (interval) clearInterval(interval)
+      document.removeEventListener('visibilitychange', handleVisibility)
+    }
+  }, [fetchData, debouncedFetch])
+
+  const statusText = useMemo(() => {
+    return metrics ? `${metrics.version} - Uptime: ${formatUptime(metrics.uptime)}` : 'System overview'
+  }, [metrics])
 
   return (
     <div className="p-6 max-w-7xl mx-auto">
       <div className="flex items-center justify-between mb-6">
         <div>
           <div className="flex items-center gap-3">
-            <h1 className="text-2xl font-bold text-[rgb(var(--color-text))]">Dashboard</h1>
+            <h1 ref={headingRef} tabIndex={-1} className="text-2xl font-bold text-[rgb(var(--color-text))] focus:outline-none">Dashboard</h1>
             <StatusBadge status={isConnected ? 'connected' : 'error'} label={isConnected ? 'Connected' : 'Disconnected'} />
           </div>
           <p className="text-sm text-[rgb(var(--color-text-secondary))] mt-1">
-            {metrics ? `${metrics.version} - Uptime: ${formatUptime(metrics.uptime)}` : 'System overview'}
+            {statusText}
           </p>
         </div>
         <div className="flex items-center gap-2">
+          {isStale && (
+            <span className="text-[10px] text-yellow-500 flex items-center gap-1" role="status" aria-live="polite">
+              <RefreshCw size={10} className="animate-spin" /> Updating...
+            </span>
+          )}
           <button onClick={() => navigate('/settings')} className="btn-ghost text-xs flex items-center gap-1">
             <Wrench size={14} /> Customize
           </button>
-          <button onClick={() => { setRefreshing(true); fetchData(); }}
-            disabled={refreshing} className="btn-ghost p-2" title="Refresh">
+          <button onClick={() => { setRefreshing(true); fetchData().finally(() => setRefreshing(false)); }}
+            disabled={refreshing} className="btn-ghost p-2" title="Refresh" aria-label="Refresh dashboard data">
             <RefreshCw size={16} className={refreshing ? 'animate-spin' : ''} />
           </button>
         </div>

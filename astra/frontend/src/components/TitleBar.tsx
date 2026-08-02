@@ -3,7 +3,7 @@ import { useAppStore } from '../stores/appStore'
 import { Menu, Minus, Maximize2, Minimize2, X } from 'lucide-react'
 
 export default function TitleBar() {
-  const { sidebarOpen, toggleSidebar, isConnected } = useAppStore()
+  const { toggleSidebar, isConnected } = useAppStore()
   const isElectron = !!(window as any).electronAPI
   const [isMaximized, setIsMaximized] = useState(false)
   const [appVersion, setAppVersion] = useState('0.1.0')
@@ -28,7 +28,8 @@ export default function TitleBar() {
   const handleClose = () => (window as any).electronAPI?.close()
 
   return (
-    <div
+    <header
+      role="banner"
       className={`flex items-center justify-between h-10 px-3 bg-[rgb(var(--color-surface))] border-b border-[rgb(var(--color-border))] select-none ${
         isElectron ? 'app-region-drag' : ''
       }`}
@@ -97,7 +98,7 @@ export default function TitleBar() {
           </button>
         </div>
       )}
-    </div>
+    </header>
   )
 }
 
