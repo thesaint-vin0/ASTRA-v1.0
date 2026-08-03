@@ -1,6 +1,7 @@
 const { app, BrowserWindow, ipcMain, shell, Tray, Menu, nativeImage, Notification, dialog, powerMonitor } = require('electron')
 const path = require('path')
 const fs = require('fs')
+const { UpdateManager } = require('./updater')
 
 let mainWindow = null
 let tray = null
@@ -9,6 +10,7 @@ let isDev = false
 let isQuitConfirmed = false
 let pendingOpenPaths = []
 let rendererReady = false
+let updateManager = null
 
 // Single instance lock — focus existing window instead of launching a duplicate
 const gotTheLock = app.requestSingleInstanceLock()
@@ -143,13 +145,50 @@ function ensureDir(dir) {
   }
 }
 
+function getReleaseChannel() {
+  return /-(alpha|beta|rc|dev)/i.test(app.getVersion()) ? 'beta' : 'stable'
+}
+
 function logCrash(error) {
   try {
-    const timestamp = new Date().toISOString()
-    const log = `[${timestamp}] CRASH: ${error}\n`
-    fs.appendFileSync(crashLogFile, log)
+    const entry = {
+      timestamp: new Date().toISOString(),
+      type: 'crash',
+      error:
+        typeof error === 'string'
+          ? error
+          : (error && error.stack) || (error && error.message) || String(error),
+      version: app.getVersion(),
+      channel: getReleaseChannel(),
+      platform: process.platform,
+      arch: process.arch,
+      electron: process.versions.electron,
+      node: process.versions.node,
+    }
+    fs.appendFileSync(crashLogFile, JSON.stringify(entry) + '\n')
   } catch (e) {
     console.error('Failed to write crash log:', e)
+  }
+}
+
+function logRelease(event, details = {}) {
+  try {
+    const releaseLogFile = path.join(app.getPath('userData'), 'release.log')
+    const entry = {
+      timestamp: new Date().toISOString(),
+      type: 'release',
+      event,
+      ...details,
+      version: app.getVersion(),
+      channel: getReleaseChannel(),
+      platform: process.platform,
+      arch: process.arch,
+      electron: process.versions.electron,
+      node: process.versions.node,
+    }
+    fs.appendFileSync(releaseLogFile, JSON.stringify(entry) + '\n')
+  } catch (e) {
+    console.error('Failed to write release log:', e)
   }
 }
 
@@ -848,6 +887,16 @@ app.whenReady().then(() => {
   if (initialFilePaths.length > 0) {
     pendingOpenPaths.push(...initialFilePaths)
   }
+
+  // Auto-update manager — registers `update:*` IPC handlers and status events.
+  updateManager = new UpdateManager()
+
+  // Structured release logging: record this launch for ops/CI traceability.
+  logRelease('app-launch', {
+    packaged: app.isPackaged,
+    devtools: isDev,
+    argv: process.argv.slice(1).slice(0, 8),
+  })
 
   // Auto backup settings periodically
   setInterval(backupSettings, 3600000) // Every hour

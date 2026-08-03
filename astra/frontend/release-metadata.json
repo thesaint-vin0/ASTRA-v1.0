@@ -1,0 +1,18 @@
+{
+  "appId": "dev.astra.ai",
+  "projectName": "astra-ai",
+  "productName": "Astra AI",
+  "version": "0.1.0",
+  "channel": "stable",
+  "commit": "539dac7",
+  "buildDate": "2026-08-03T22:12:47.050Z",
+  "platform": "win32",
+  "arch": "x64",
+  "environment": {
+    "node": "22.19.0",
+    "electron": null,
+    "chrome": null
+  },
+  "github": null,
+  "generatedBy": "scripts/generate-release-metadata.js"
+}

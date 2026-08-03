@@ -431,6 +431,44 @@ getFeatures: () => Promise<Record<string, boolean>>
 
   // "Open with Astra" — file association support (drain pending paths queued before renderer was ready)
   getPendingOpenPaths: () => Promise<string[]>
+
+  // Auto-update
+  checkForUpdates: () => Promise<{ success: boolean; state?: UpdateState; error?: string }>
+  downloadUpdate: () => Promise<{ success: boolean; error?: string }>
+  installUpdate: () => Promise<{ success: boolean; error?: string }>
+  getUpdateStatus: () => Promise<UpdateStatus>
+  setAutoUpdate: (enabled: boolean) => Promise<{ success: boolean; autoDownload: boolean }>
+  setUpdateChannel: (channel: UpdateChannel) => Promise<{ success: boolean; channel?: UpdateChannel; error?: string }>
+  onUpdateStatus: (callback: (status: UpdateStatus) => void) => () => void
+}
+
+export type UpdateChannel = 'stable' | 'beta'
+
+export type UpdateState =
+  | 'idle'
+  | 'checking'
+  | 'available'
+  | 'not_available'
+  | 'downloading'
+  | 'downloaded'
+  | 'installing'
+  | 'error'
+
+export interface UpdateDownloadProgress {
+  percent: number
+  bytesPerSecond: number
+  transferred: number
+  total: number
+}
+
+export interface UpdateStatus {
+  state: UpdateState
+  currentVersion: string
+  latestVersion?: string
+  downloadProgress?: UpdateDownloadProgress
+  error?: string
+  channel: UpdateChannel
+  autoDownload: boolean
 }
 
 export interface DisplayInfo {

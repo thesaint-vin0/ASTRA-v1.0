@@ -26,7 +26,7 @@ export default tseslint.config(
     // Electron main/preload scripts run in a Node environment.
     // Scope Node globals to the electron layer only — do not disable
     // useful rules globally.
-    files: ['electron/**/*.{js,cjs,mjs}', 'electron/*.{js,cjs,mjs}'],
+    files: ['electron/**/*.{js,cjs,mjs}', 'electron/*.{js,cjs,mjs}', 'scripts/**/*.{js,cjs,mjs}', '*.config.{js,cjs,mjs}', 'vite.config.ts', 'tailwind.config.js', 'postcss.config.js'],
     languageOptions: {
       globals: {
         process: 'readonly',

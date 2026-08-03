@@ -103,7 +103,20 @@ contextBridge.exposeInMainWorld('electronAPI', {
   listBackups: () => ipcRenderer.invoke('backup:list'),
   restoreBackup: (filename) => ipcRenderer.invoke('backup:restore', filename),
 
-  // Crash logs
+// Crash logs
   getCrashLogs: () => ipcRenderer.invoke('crash:getLogs'),
   clearCrashLogs: () => ipcRenderer.invoke('crash:clearLogs'),
+
+  // Auto-update
+  checkForUpdates: () => ipcRenderer.invoke('update:check'),
+  downloadUpdate: () => ipcRenderer.invoke('update:download'),
+  installUpdate: () => ipcRenderer.invoke('update:install'),
+  getUpdateStatus: () => ipcRenderer.invoke('update:getStatus'),
+  setAutoUpdate: (enabled) => ipcRenderer.invoke('update:setAutoDownload', enabled),
+  setUpdateChannel: (channel) => ipcRenderer.invoke('update:setChannel', channel),
+  onUpdateStatus: (callback) => {
+    const handler = (_, status) => callback(status)
+    ipcRenderer.on('update:status', handler)
+    return () => ipcRenderer.removeListener('update:status', handler)
+  },
 })

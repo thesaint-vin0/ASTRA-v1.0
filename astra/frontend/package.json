@@ -11,6 +11,12 @@
     "preview": "vite preview",
     "electron:dev": "concurrently \"vite\" \"wait-on http://localhost:5173 && electron .\"",
     "electron:build": "npm run build && electron-builder",
+    "electron:dir": "npm run build && electron-builder --dir",
+    "electron:portable": "npm run build && electron-builder --win portable",
+    "electron:linux": "npm run build && electron-builder --linux",
+    "electron:mac": "npm run build && electron-builder --mac",
+    "release:metadata":"node scripts/generate-release-metadata.js",
+    "smoke":"node scripts/smoke-test.js",
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0"
   },
   "dependencies": {
@@ -18,6 +24,7 @@
     "@types/react-window": "^1.8.8",
     "clsx": "^2.1.1",
     "date-fns": "^4.1.0",
+    "electron-updater": "^6.8.9",
     "framer-motion": "^11.11.0",
     "lucide-react": "^0.460.0",
     "react": "^18.3.1",
@@ -29,14 +36,15 @@
     "recharts": "^2.13.0",
     "tailwind-merge": "^2.5.0",
     "zustand": "^5.0.1"
-},
+  },
   "devDependencies": {
     "@axe-core/react": "^4.12.1",
-    "axe-core": "^4.12.1",
+    "@electron/notarize": "^2.5.0",
     "@types/react": "^18.3.12",
     "@types/react-dom": "^18.3.1",
     "@vitejs/plugin-react": "^4.3.4",
     "autoprefixer": "^10.4.20",
+    "axe-core": "^4.12.1",
     "concurrently": "^9.1.0",
     "electron": "^33.2.0",
     "electron-builder": "^25.1.8",
@@ -52,18 +60,45 @@
   "build": {
     "appId": "dev.astra.ai",
     "productName": "Astra AI",
+    "copyright": "Copyright © 2025 Astra AI",
     "directories": {
-      "output": "release"
+      "output": "release",
+      "buildResources": "electron"
     },
     "files": [
       "dist/**/*",
-      "electron/**/*"
+      "electron/**/*",
+      "package.json"
+    ],
+    "asar": true,
+    "asarUnpack": [
+      "**/*.node"
+    ],
+    "artifactName": "${productName}-${version}-${os}-${arch}.${ext}",
+    "publish": [
+      {
+        "provider": "github",
+        "owner": "thesaint-vin0",
+        "repo": "ASTRA-v1.0"
+      }
     ],
     "win": {
       "target": [
-        "nsis"
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        },
+        {
+          "target": "portable",
+          "arch": [
+            "x64"
+          ]
+        }
       ],
       "icon": "public/icon.png",
+      "publisherName": "Astra AI",
       "fileAssociations": [
         {
           "ext": "md",
@@ -102,11 +137,40 @@
         }
       ]
     },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "Astra AI",
+      "installerIcon": "public/icon.png",
+      "uninstallerIcon": "public/icon.png",
+      "installerHeaderIcon": "public/icon.png",
+      "deleteAppDataOnUninstall": false,
+      "runAfterFinish": true,
+      "artifactName": "${productName}-Setup-${version}.${ext}"
+    },
+    "portable": {
+      "artifactName": "${productName}-Portable-${version}.${ext}"
+    },
     "mac": {
       "target": [
-        "dmg"
+        {
+          "target": "dmg",
+          "arch": [
+            "x64",
+            "arm64"
+          ]
+        }
       ],
       "icon": "public/icon.png",
+      "category": "public.app-category.productivity",
+      "hardenedRuntime": true,
+      "gatekeeperAssess": false,
+      "entitlements": "electron/entitlements.mac.plist",
+      "entitlementsInherit": "electron/entitlements.mac.inherit.plist",
+      "darkModeSupport": true,
       "fileAssociations": [
         {
           "ext": "md",
@@ -138,12 +202,41 @@
         }
       ]
     },
+    "dmg": {
+      "artifactName": "${productName}-${version}-${arch}.${ext}",
+      "contents": [
+        {
+          "x": 130,
+          "y": 220
+        },
+        {
+          "x": 410,
+          "y": 220,
+          "type": "link",
+          "path": "/Applications"
+        }
+      ]
+    },
     "linux": {
       "target": [
-        "AppImage",
-        "deb"
+        {
+          "target": "AppImage",
+          "arch": [
+            "x64"
+          ]
+        },
+        {
+          "target": "deb",
+          "arch": [
+            "x64"
+          ]
+        }
       ],
       "icon": "public/icon.png",
+      "category": "Utility",
+      "maintainer": "Astra AI <support@astra.ai>",
+      "synopsis": "Astra AI Operating System",
+      "description": "Astra AI Operating System - Your personal AI assistant",
       "fileAssociations": [
         {
           "ext": "md",
@@ -181,6 +274,7 @@
           "mimeType": "application/x-yaml"
         }
       ]
-    }
+    },
+    "afterSign": "electron/notarize.cjs"
   }
 }

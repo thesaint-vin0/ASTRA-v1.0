@@ -2,9 +2,10 @@ import { useState, useEffect, useCallback } from 'react'
 import { useShallow } from 'zustand/react/shallow'
 import { useThemeStore, type Theme } from '../stores/themeStore'
 import { api } from '../services/api'
-import { Sun, Moon, Palette, Save, RefreshCw, Loader2, AlertCircle, Eye, Bell, Monitor, MonitorDown, Shield, Bug, Clipboard, Download, Archive } from 'lucide-react'
+import { Sun, Moon, Palette, Save, RefreshCw, Loader2, AlertCircle, Eye, Bell, Monitor, MonitorDown, Shield, Bug, Clipboard, Download, Archive, DownloadCloud } from 'lucide-react'
 import { showToast } from '../components/Toast'
 import { useRouteFocus } from '../hooks/useRouteFocus'
+import type { UpdateStatus, UpdateChannel } from '../types'
 
 export default function Settings() {
   const { ref: headingRef } = useRouteFocus()
@@ -34,9 +35,104 @@ export default function Settings() {
   const [crashLogs, setCrashLogs] = useState<string>('')
   const [crashLogsLoading, setCrashLogsLoading] = useState(false)
 
+  // Auto-update
+  const [updateStatus, setUpdateStatus] = useState<UpdateStatus | null>(null)
+  const [updateChecking, setUpdateChecking] = useState(false)
+  const [updateDownloading, setUpdateDownloading] = useState(false)
+
   useEffect(() => {
     loadSettings()
     loadDesktopSettings()
+    loadUpdateStatus()
+    // Subscribe to live update status events from the main process.
+    if (window.electronAPI?.onUpdateStatus) {
+      const unsub = window.electronAPI.onUpdateStatus((status) => {
+        setUpdateStatus(status)
+        if (status.state === 'downloading') setUpdateDownloading(true)
+        if (status.state === 'downloaded' || status.state === 'available' || status.state === 'error' || status.state === 'not_available') {
+          setUpdateDownloading(false)
+        }
+        if (status.state === 'checking') setUpdateChecking(true)
+        if (status.state === 'available' || status.state === 'not_available' || status.state === 'downloaded' || status.state === 'error') {
+          setUpdateChecking(false)
+        }
+      })
+      return () => unsub()
+    }
+  }, [])
+
+  const loadUpdateStatus = async () => {
+    if (!window.electronAPI?.getUpdateStatus) return
+    try {
+      const status = await window.electronAPI.getUpdateStatus()
+      setUpdateStatus(status)
+    } catch {
+      // Electron-only feature — silently degrade in browser
+    }
+  }
+
+  const handleCheckForUpdates = useCallback(async () => {
+    if (!window.electronAPI?.checkForUpdates) return
+    setUpdateChecking(true)
+    try {
+      const result = await window.electronAPI.checkForUpdates()
+      if (!result.success && result.error) {
+        showToast({ type: 'error', title: 'Update check failed', message: result.error })
+      }
+    } catch {
+      showToast({ type: 'error', title: 'Update check failed' })
+    } finally {
+      setUpdateChecking(false)
+    }
+  }, [])
+
+  const handleDownloadUpdate = useCallback(async () => {
+    if (!window.electronAPI?.downloadUpdate) return
+    setUpdateDownloading(true)
+    try {
+      const result = await window.electronAPI.downloadUpdate()
+      if (!result.success && result.error) {
+        showToast({ type: 'error', title: 'Update download failed', message: result.error })
+        setUpdateDownloading(false)
+      }
+    } catch {
+      showToast({ type: 'error', title: 'Update download failed' })
+      setUpdateDownloading(false)
+    }
+  }, [])
+
+  const handleInstallUpdate = useCallback(async () => {
+    if (!window.electronAPI?.installUpdate) return
+    try {
+      await window.electronAPI.installUpdate()
+    } catch {
+      showToast({ type: 'error', title: 'Failed to install update' })
+    }
+  }, [])
+
+  const handleSetAutoUpdate = useCallback(async (checked: boolean) => {
+    if (!window.electronAPI?.setAutoUpdate) return
+    try {
+      await window.electronAPI.setAutoUpdate(checked)
+      setUpdateStatus((prev) => prev ? { ...prev, autoDownload: checked } : prev)
+    } catch {
+      showToast({ type: 'error', title: 'Failed to update auto-update preference' })
+    }
+  }, [])
+
+  const handleSetUpdateChannel = useCallback(async (channel: UpdateChannel) => {
+    if (!window.electronAPI?.setUpdateChannel) return
+    try {
+      const result = await window.electronAPI.setUpdateChannel(channel)
+      if (result.success) {
+        setUpdateStatus((prev) => prev ? { ...prev, channel } : prev)
+        showToast({ type: 'success', title: `Update channel set to ${channel}` })
+      } else {
+        showToast({ type: 'error', title: 'Failed to set update channel', message: result.error })
+      }
+    } catch {
+      showToast({ type: 'error', title: 'Failed to set update channel' })
+    }
   }, [])
 
   const loadDesktopSettings = async () => {
@@ -381,21 +477,105 @@ export default function Settings() {
           </div>
         </div>
 
-{/* Updates */}
+        {/* Updates */}
         <div className="card p-6">
           <h2 className="text-lg font-semibold text-[rgb(var(--color-text))] mb-4">Updates</h2>
-          <div className="space-y-4">
-            <SettingRow label="Update Channel" description="Which release channel to track">
-              <select className="input text-sm" aria-label="Update channel">
-                <option value="stable">stable</option>
-                <option value="beta">beta</option>
-                <option value="dev">dev</option>
-              </select>
-            </SettingRow>
-            <SettingRow label="Auto Update" description="Automatically download and install updates">
-              <input type="checkbox" className="toggle" aria-label="Enable auto update" />
-            </SettingRow>
-          </div>
+          {!window.electronAPI?.checkForUpdates ? (
+            <p className="text-sm text-[rgb(var(--color-text-secondary))]">
+              Automatic updates are available when running as an Electron application.
+            </p>
+          ) : (
+            <div className="space-y-4">
+              <SettingRow label="Update Channel" description="Which release channel to track">
+                <select
+                  className="input text-sm"
+                  aria-label="Update channel"
+                  value={updateStatus?.channel || 'stable'}
+                  onChange={(e) => handleSetUpdateChannel(e.target.value as UpdateChannel)}
+                >
+                  <option value="stable">stable</option>
+                  <option value="beta">beta</option>
+                </select>
+              </SettingRow>
+              <SettingRow label="Auto Update" description="Automatically download and install updates">
+                <input
+                  type="checkbox"
+                  className="toggle"
+                  aria-label="Enable auto update"
+                  checked={updateStatus?.autoDownload ?? false}
+                  onChange={(e) => handleSetAutoUpdate(e.target.checked)}
+                />
+              </SettingRow>
+              {updateStatus && (
+                <div className="pt-3 border-t border-[rgb(var(--color-border))] space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div className="text-sm">
+                      <span className="text-[rgb(var(--color-text-secondary))]">Current version: </span>
+                      <span className="text-[rgb(var(--color-text))] font-medium">{updateStatus.currentVersion}</span>
+                      {updateStatus.latestVersion && (
+                        <>
+                          <span className="text-[rgb(var(--color-text-secondary))]"> → </span>
+                          <span className="text-astra-400 font-medium">{updateStatus.latestVersion}</span>
+                        </>
+                      )}
+                    </div>
+                    <button
+                      onClick={handleCheckForUpdates}
+                      disabled={updateChecking}
+                      className="btn-secondary text-xs flex items-center gap-1.5"
+                      aria-label="Check for updates"
+                    >
+                      <RefreshCw size={12} className={updateChecking ? 'animate-spin' : ''} />
+                      Check
+                    </button>
+                  </div>
+
+                  {/* Status line */}
+                  <p className="text-xs text-[rgb(var(--color-text-secondary))]" role="status" aria-live="polite">
+                    {updateStatus.state === 'checking' && 'Checking for updates...'}
+                    {updateStatus.state === 'available' && `Update ${updateStatus.latestVersion ?? ''} is available`}
+                    {updateStatus.state === 'downloading' && updateStatus.downloadProgress && (
+                      <>Downloading... {Math.round(updateStatus.downloadProgress.percent)}%</>
+                    )}
+                    {updateStatus.state === 'downloaded' && 'Update downloaded — ready to install'}
+                    {updateStatus.state === 'not_available' && 'You are running the latest version'}
+                    {updateStatus.state === 'error' && updateStatus.error && `Update error: ${updateStatus.error}`}
+                    {updateStatus.state === 'error' && !updateStatus.error && 'Update error'}
+                    {updateStatus.state === 'installing' && 'Installing update...'}
+                    {updateStatus.state === 'idle' && 'Check for updates to see the latest status'}
+                  </p>
+
+                  {/* Download progress bar */}
+                  {updateStatus.state === 'downloading' && updateStatus.downloadProgress && (
+                    <div className="h-1.5 bg-[rgb(var(--color-bg))] rounded-full overflow-hidden" aria-hidden="true">
+                      <div
+                        className="h-full bg-astra-500 rounded-full transition-all"
+                        style={{ width: `${Math.min(100, updateStatus.downloadProgress.percent)}%` }}
+                      />
+                    </div>
+                  )}
+
+                  {/* Action buttons */}
+                  {updateStatus.state === 'available' && !updateStatus.downloadProgress && (
+                    <button
+                      onClick={handleDownloadUpdate}
+                      disabled={updateDownloading}
+                      className="btn-primary text-xs flex items-center gap-1.5"
+                    >
+                      <DownloadCloud size={12} />
+                      {updateDownloading ? 'Downloading...' : 'Download Update'}
+                    </button>
+                  )}
+                  {updateStatus.state === 'downloaded' && (
+                    <button onClick={handleInstallUpdate} className="btn-primary text-xs flex items-center gap-1.5">
+                      <DownloadCloud size={12} />
+                      Restart &amp; Install
+                    </button>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Accessibility */}
