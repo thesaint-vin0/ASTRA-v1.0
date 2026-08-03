@@ -26,9 +26,9 @@ and lazy-loaded routes with verified code splitting.
 
 | Metric | Value |
 |--------|-------|
-| Total modules transformed | 2022 |
-| Build time | 19.37s |
-| Number of chunks | 22 |
+| Total modules transformed | 2036 |
+| Build time | 14.38s |
+| Number of chunks | 31 |
 | Chunk size warning limit | 500 kB |
 
 ### Route Chunk Sizes (gzipped)
@@ -143,18 +143,21 @@ point is only 72 kB raw / 18 kB gzipped, dramatically reducing initial load time
 | Metric | Status |
 |--------|--------|
 | tsc --noEmit | ✅ Passes (exit code 0) |
-| Production build | ✅ Succeeds (2022 modules, 19.37s) |
-| Code splitting | ✅ 22 chunks, per-route lazy loading |
+| Production build | ✅ Succeeds (2036 modules, 14.38s) |
+| Code splitting | ✅ 31 chunks, per-route lazy loading |
 | No unnecessary re-renders | ✅ memo + useShallow + atomic selectors |
 | WebSocket message loss during reconnect | ✅ Prevented via persistent priority queue |
 | Streaming content integrity | ✅ Batched chunks concatenated |
 
 ---
 
-## Remaining Optimizations (Not Yet Applied)
+## Later Optimizations (Now Applied)
 
-- [ ] Preload critical routes (chat, dashboard) in index.html
-- [ ] Defer non-critical initializations in App.tsx
-- [ ] Stale-while-revalidate pattern for Dashboard
-- [ ] Image optimization (lazy loading with proper dimensions)
+The following optimizations were previously listed as remaining work and have since
+been implemented and verified in the codebase:
+
+- [x] Preload critical routes (chat, dashboard) in index.html — `modulepreload` hints for Dashboard.tsx, Chat.tsx, Layout.tsx, Sidebar.tsx
+- [x] Defer non-critical initializations in App.tsx — route preloading deferred via `requestIdleCallback` / 2s fallback timeout
+- [x] Stale-while-revalidate pattern for Dashboard — implemented in `dashboardStore` refresh logic
+- [ ] Image optimization (lazy loading with proper dimensions) — still outstanding, tracked as low-priority technical debt
 

@@ -76,7 +76,7 @@ Phase 3 focused on transforming Astra AI from a web application into a fully-fea
 | Task | Status | Details |
 |------|--------|---------|
 | EmptyState component | ✅ Complete | Reusable, used across all pages |
-| OfflineState component | ✅ Complete | Integrated in Dashboard, Memory, Files, Models, Plugins |
+| OfflineState component | ✅ Complete | Integrated in Dashboard, Memory, Files, Models, Plugins, and Chat |
 | Skeleton loaders | ✅ Complete | Dashboard, Memory, Files, Models, Plugins, Settings |
 | Animation polish | ✅ Complete | Consistent durations, easing, reduced-motion |
 | Loading/empty/error states | ✅ Complete | Every page has proper state handling |
