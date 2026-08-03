@@ -29,8 +29,10 @@
     "recharts": "^2.13.0",
     "tailwind-merge": "^2.5.0",
     "zustand": "^5.0.1"
-  },
+},
   "devDependencies": {
+    "@axe-core/react": "^4.12.1",
+    "axe-core": "^4.12.1",
     "@types/react": "^18.3.12",
     "@types/react-dom": "^18.3.1",
     "@vitejs/plugin-react": "^4.3.4",
@@ -47,7 +49,7 @@
     "vite": "^6.0.0",
     "wait-on": "^8.0.1"
   },
-"build": {
+  "build": {
     "appId": "dev.astra.ai",
     "productName": "Astra AI",
     "directories": {
@@ -106,13 +108,34 @@
       ],
       "icon": "public/icon.png",
       "fileAssociations": [
-        { "ext": "md", "name": "Markdown" },
-        { "ext": "txt", "name": "Text" },
-        { "ext": "pdf", "name": "PDF" },
-        { "ext": "csv", "name": "CSV" },
-        { "ext": "json", "name": "JSON" },
-        { "ext": "yaml", "name": "YAML" },
-        { "ext": "yml", "name": "YAML" }
+        {
+          "ext": "md",
+          "name": "Markdown"
+        },
+        {
+          "ext": "txt",
+          "name": "Text"
+        },
+        {
+          "ext": "pdf",
+          "name": "PDF"
+        },
+        {
+          "ext": "csv",
+          "name": "CSV"
+        },
+        {
+          "ext": "json",
+          "name": "JSON"
+        },
+        {
+          "ext": "yaml",
+          "name": "YAML"
+        },
+        {
+          "ext": "yml",
+          "name": "YAML"
+        }
       ]
     },
     "linux": {
@@ -122,13 +145,41 @@
       ],
       "icon": "public/icon.png",
       "fileAssociations": [
-        { "ext": "md", "name": "Markdown", "mimeType": "text/markdown" },
-        { "ext": "txt", "name": "Text", "mimeType": "text/plain" },
-        { "ext": "pdf", "name": "PDF", "mimeType": "application/pdf" },
-        { "ext": "csv", "name": "CSV", "mimeType": "text/csv" },
-        { "ext": "json", "name": "JSON", "mimeType": "application/json" },
-        { "ext": "yaml", "name": "YAML", "mimeType": "application/x-yaml" },
-        { "ext": "yml", "name": "YAML", "mimeType": "application/x-yaml" }
+        {
+          "ext": "md",
+          "name": "Markdown",
+          "mimeType": "text/markdown"
+        },
+        {
+          "ext": "txt",
+          "name": "Text",
+          "mimeType": "text/plain"
+        },
+        {
+          "ext": "pdf",
+          "name": "PDF",
+          "mimeType": "application/pdf"
+        },
+        {
+          "ext": "csv",
+          "name": "CSV",
+          "mimeType": "text/csv"
+        },
+        {
+          "ext": "json",
+          "name": "JSON",
+          "mimeType": "application/json"
+        },
+        {
+          "ext": "yaml",
+          "name": "YAML",
+          "mimeType": "application/x-yaml"
+        },
+        {
+          "ext": "yml",
+          "name": "YAML",
+          "mimeType": "application/x-yaml"
+        }
       ]
     }
   }

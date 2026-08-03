@@ -3,6 +3,10 @@ import { Brain, Search, Trash2, Clock, Star, Tag } from 'lucide-react'
 import { api } from '../services/api'
 import { useRouteFocus } from '../hooks/useRouteFocus'
 import { showToast } from '../components/Toast'
+import EmptyState from '../components/EmptyState'
+import OfflineState from '../components/OfflineState'
+import { SkeletonList } from '../components/SkeletonLoader'
+import { useAppStore } from '../stores/appStore'
 import type { Memory as MemoryType } from '../types'
 
 function getTypeIcon(type: string) {
@@ -113,6 +117,7 @@ export default function Memory() {
   const [search, setSearch] = useState('')
   const [loading, setLoading] = useState(false)
   const [focusedIndex, setFocusedIndex] = useState(0)
+  const isConnected = useAppStore((s) => s.isConnected)
 
   const loadMemories = useCallback(async (query?: string) => {
     setLoading(true)
@@ -198,21 +203,22 @@ export default function Memory() {
         </button>
       </div>
 
-      {/* Memory List */}
+{/* Memory List */}
       <div ref={listRef} className="space-y-3" role="list" aria-label="Memory items">
-        {loading ? (
-          <div className="text-center py-12" role="status" aria-live="polite">
-            <div className="w-8 h-8 border-2 border-astra-500 border-t-transparent rounded-full animate-spin mx-auto mb-3" />
-            <p className="text-sm text-[rgb(var(--color-text-secondary))]">Searching memories...</p>
-          </div>
+        {!isConnected && !loading ? (
+          <OfflineState
+            title="Backend Disconnected"
+            description="Connect to the Astra backend to browse and search memories."
+            onRetry={() => { loadMemories() }}
+          />
+        ) : loading ? (
+          <SkeletonList items={5} />
         ) : memories.length === 0 ? (
-          <div className="text-center py-12">
-            <Brain size={48} className="text-[rgb(var(--color-text-secondary))] mx-auto mb-3 opacity-50" aria-hidden="true" />
-            <p className="text-[rgb(var(--color-text-secondary))]">No memories found</p>
-            <p className="text-sm text-[rgb(var(--color-text-secondary))] mt-1">
-              Memories are created automatically during conversations
-            </p>
-          </div>
+          <EmptyState
+            icon={<Brain size={48} />}
+            title="No memories found"
+            description="Memories are created automatically during conversations"
+          />
         ) : (
           memories.map((mem, i) => (
             <MemoryCard

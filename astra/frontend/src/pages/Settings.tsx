@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { useShallow } from 'zustand/react/shallow'
 import { useThemeStore, type Theme } from '../stores/themeStore'
 import { api } from '../services/api'
-import { Sun, Moon, Palette, Save, RefreshCw, Loader2, AlertCircle, Eye, Bell, Monitor, MonitorDown, HardDrive, Shield, Bug, Clipboard, Download, Archive, Trash2 } from 'lucide-react'
+import { Sun, Moon, Palette, Save, RefreshCw, Loader2, AlertCircle, Eye, Bell, Monitor, MonitorDown, Shield, Bug, Clipboard, Download, Archive } from 'lucide-react'
 import { showToast } from '../components/Toast'
 import { useRouteFocus } from '../hooks/useRouteFocus'
 

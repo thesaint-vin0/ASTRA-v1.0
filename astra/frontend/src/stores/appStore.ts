@@ -23,6 +23,15 @@ interface AppState {
   isConnected: boolean
   isBackendReady: boolean
 
+  // Active tasks (used for shutdown protection and busy indicators)
+  activeTasks: {
+    streaming: boolean      // AI generation is active
+    importing: boolean      // File import/export is running
+    exporting: boolean
+    automation: boolean     // Automation tasks are active
+    indexing: boolean       // Memory indexing
+  }
+
   // Notifications
   notifications: Notification[]
 
@@ -40,6 +49,9 @@ interface AppState {
   setSidebarCollapsed: (collapsed: boolean) => void
   setConnected: (connected: boolean) => void
   setBackendReady: (ready: boolean) => void
+  setActiveTask: (task: keyof AppState['activeTasks'], active: boolean) => void
+  isBusy: () => boolean
+  activeTaskCount: () => number
   addNotification: (type: Notification['type'], title: string, message?: string, duration?: number) => void
   removeNotification: (id: string) => void
   clearNotifications: () => void
@@ -49,12 +61,19 @@ interface AppState {
 
 export const useAppStore = create<AppState>()(
   persist(
-    (set) => ({
+    (set, get) => ({
       sidebarOpen: true,
       sidebarView: 'chat',
       sidebarCollapsed: false,
       isConnected: false,
       isBackendReady: false,
+      activeTasks: {
+        streaming: false,
+        importing: false,
+        exporting: false,
+        automation: false,
+        indexing: false,
+      },
       notifications: [],
       viewMode: 'grid',
       lastActiveAt: null,
@@ -66,6 +85,22 @@ export const useAppStore = create<AppState>()(
       setSidebarCollapsed: (collapsed) => set({ sidebarCollapsed: collapsed }),
       setConnected: (connected) => set({ isConnected: connected }),
       setBackendReady: (ready) => set({ isBackendReady: ready }),
+
+      setActiveTask: (task, active) =>
+        set((state) => ({
+          activeTasks: { ...state.activeTasks, [task]: active },
+        })),
+
+      isBusy: () => {
+        const state = get().activeTasks
+        return state.streaming || state.importing || state.exporting || state.automation || state.indexing
+      },
+
+      activeTaskCount: () => {
+        const state = get().activeTasks
+        return [state.streaming, state.importing, state.exporting, state.automation, state.indexing]
+          .filter(Boolean).length
+      },
 
       addNotification: (type, title, message, duration = 4000) =>
         set((state) => ({

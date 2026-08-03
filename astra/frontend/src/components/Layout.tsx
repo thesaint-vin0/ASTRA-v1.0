@@ -1,4 +1,4 @@
-import { useRef, useCallback } from 'react'
+import { useRef, useCallback, useEffect } from 'react'
 import { Outlet, useLocation } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useShallow } from 'zustand/react/shallow'
@@ -10,18 +10,41 @@ import CommandPalette from './CommandPalette'
 import FileDropZone from './FileDropZone'
 import MemoryMonitor from './MemoryMonitor'
 import { useAppStore } from '../stores/appStore'
+import { useChatStore } from '../stores/chatStore'
 
 export default function Layout() {
   const { sidebarOpen, isConnected } = useAppStore(useShallow((s) => ({
     sidebarOpen: s.sidebarOpen,
     isConnected: s.isConnected,
   })))
+const isStreaming = useChatStore((s) => s.isStreaming)
   const location = useLocation()
   const mainRef = useRef<HTMLDivElement>(null)
+  const streamingRef = useRef(isStreaming)
+  streamingRef.current = isStreaming
 
   const handleSkipToContent = useCallback(() => {
     mainRef.current?.focus()
   }, [])
+
+  // Graceful shutdown: intercept beforeunload while any active task is running
+  // so the user is not left with half-finished operations.
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      const tasks = useAppStore.getState().activeTasks
+      const isBusy = tasks.streaming || tasks.importing || tasks.exporting || tasks.automation || tasks.indexing
+      if (!isBusy) return
+      e.preventDefault()
+      e.returnValue = 'Active tasks are still running. Are you sure you want to quit?'
+    }
+    window.addEventListener('beforeunload', handleBeforeUnload)
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload)
+  }, [])
+
+  // Wire up active task tracking: chatStore streaming → appStore activeTasks.streaming
+  useEffect(() => {
+    useAppStore.getState().setActiveTask('streaming', isStreaming)
+  }, [isStreaming])
 
   return (
     <div className="h-screen flex flex-col overflow-hidden bg-[rgb(var(--color-bg))]">

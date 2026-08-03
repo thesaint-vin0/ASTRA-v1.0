@@ -2,6 +2,10 @@ import { useState, useCallback, useMemo, memo, useRef, useEffect } from 'react'
 import { Folder, File, FileText, Image, ArrowLeft, Search, Home } from 'lucide-react'
 import { api } from '../services/api'
 import { useRouteFocus } from '../hooks/useRouteFocus'
+import EmptyState from '../components/EmptyState'
+import OfflineState from '../components/OfflineState'
+import { SkeletonList } from '../components/SkeletonLoader'
+import { useAppStore } from '../stores/appStore'
 import type { FileItem } from '../types'
 
 const fileIcons: Record<string, React.ReactNode> = {
@@ -92,6 +96,7 @@ export default function Files() {
   const [searchQuery, setSearchQuery] = useState('')
   const [focusedIndex, setFocusedIndex] = useState(0)
   const listRef = useRef<HTMLDivElement>(null)
+  const isConnected = useAppStore((s) => s.isConnected)
 
   const navigateTo = useCallback(async (path: string) => {
     setLoading(true)
@@ -237,19 +242,26 @@ export default function Files() {
           <pre className="text-sm text-[rgb(var(--color-text))] whitespace-pre-wrap font-mono bg-[rgb(var(--color-bg))] p-4 rounded-lg max-h-[600px] overflow-auto scrollbar-thin">
             {content}
           </pre>
-        </div>
+</div>
+) : !isConnected && !loading ? (
+        <OfflineState
+          title="Backend Disconnected"
+          description="Connect to the Astra backend to browse and manage files."
+          onRetry={() => navigateTo('.')}
+        />
       ) : loading ? (
-        <div className="text-center py-12" role="status" aria-live="polite">
-          <div className="w-8 h-8 border-2 border-astra-500 border-t-transparent rounded-full animate-spin mx-auto mb-3" />
-          <p className="text-sm text-[rgb(var(--color-text-secondary))]">Loading...</p>
+        <div className="py-12" role="status" aria-live="polite">
+          <SkeletonList items={6} />
         </div>
       ) : (
         <div ref={listRef} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2" role="list" aria-label="Files and directories">
           {itemCount === 0 ? (
-            <div className="col-span-full text-center py-12">
-              <Folder size={48} className="text-[rgb(var(--color-text-secondary))] mx-auto mb-3 opacity-50" aria-hidden="true" />
-              <p className="text-[rgb(var(--color-text-secondary))]">No files found</p>
-              <p className="text-sm text-[rgb(var(--color-text-secondary))] mt-1">Navigate to a directory to browse files</p>
+            <div className="col-span-full">
+              <EmptyState
+                icon={<Folder size={48} />}
+                title="No files found"
+                description="Navigate to a directory to browse files"
+              />
             </div>
           ) : (
             items.map((item, i) => (

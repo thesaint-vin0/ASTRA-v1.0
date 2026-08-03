@@ -261,7 +261,11 @@ function createWindow() {
       nodeIntegration: false,
       contextIsolation: true,
       preload: path.join(__dirname, 'preload.js'),
-      sandbox: false,
+      // sandbox: true isolates the renderer and restricts Node.js access.
+      // The preload script only uses `contextBridge` and `ipcRenderer`, both
+      // of which are available in sandboxed renderers, so enabling the sandbox
+      // does not break any functionality.
+      sandbox: true,
       webSecurity: true,
     },
     frame: false,
@@ -664,21 +668,32 @@ function setupIpcHandlers() {
     return paths
   })
 
+  // Security: validate that a path is an absolute, normal string and does not
+  // contain path-traversal sequences. This prevents callers from escaping the
+  // intended directory or reading arbitrary files via `..` traversal.
+  function isSafePath(input) {
+    return typeof input === 'string' && !input.includes('\0') && !input.includes('..')
+  }
+
   // File Import Pipeline
   ipcMain.handle('file:import', async (_, filePath) => {
     try {
-      const stats = fs.statSync(filePath)
-      const ext = path.extname(filePath).toLowerCase()
+      if (!isSafePath(filePath)) {
+        return { success: false, error: 'Invalid file path' }
+      }
+      const resolved = path.resolve(filePath)
+      const stats = fs.statSync(resolved)
+      const ext = path.extname(resolved).toLowerCase()
       const supportedExts = ['.pdf', '.docx', '.xlsx', '.pptx', '.txt', '.md', '.png', '.jpg', '.jpeg', '.gif', '.svg', '.webp', '.zip', '.json', '.csv', '.xml', '.yaml', '.yml']
       if (!supportedExts.includes(ext)) {
         return { success: false, error: `Unsupported file type: ${ext}` }
       }
-      const content = fs.readFileSync(filePath, 'utf-8')
+      const content = fs.readFileSync(resolved, 'utf-8')
       return {
         success: true,
         file: {
-          name: path.basename(filePath),
-          path: filePath,
+          name: path.basename(resolved),
+          path: resolved,
           size: stats.size,
           ext,
           content,
@@ -692,22 +707,25 @@ function setupIpcHandlers() {
 
   // Drag and Drop
   ipcMain.handle('file:processDropped', async (_, filePaths) => {
+    if (!Array.isArray(filePaths)) return { success: false, files: [] }
     const results = []
     for (const filePath of filePaths) {
       try {
-        const stats = fs.statSync(filePath)
+        if (!isSafePath(filePath)) continue
+        const resolved = path.resolve(filePath)
+        const stats = fs.statSync(resolved)
         if (stats.isDirectory()) {
           results.push({
-            name: path.basename(filePath),
-            path: filePath,
+            name: path.basename(resolved),
+            path: resolved,
             type: 'directory',
             size: stats.size,
           })
         } else {
-          const ext = path.extname(filePath).toLowerCase()
+          const ext = path.extname(resolved).toLowerCase()
           results.push({
-            name: path.basename(filePath),
-            path: filePath,
+            name: path.basename(resolved),
+            path: resolved,
             type: 'file',
             ext,
             size: stats.size,

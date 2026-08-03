@@ -4,7 +4,9 @@ import { useShallow } from 'zustand/react/shallow'
 import ChatMessage from '../components/ChatMessage'
 import ChatInput from '../components/ChatInput'
 import ConversationList from '../components/ConversationList'
+import OfflineState from '../components/OfflineState'
 import { useChatStore } from '../stores/chatStore'
+import { useAppStore } from '../stores/appStore'
 import wsService from '../services/websocket'
 import type { Message } from '../types'
 import { Bot } from 'lucide-react'
@@ -15,6 +17,7 @@ export default function Chat() {
   const { ref: headingRef } = useRouteFocus()
   const { conversationId } = useParams()
   const messagesEndRef = useRef<HTMLDivElement>(null)
+  const isConnected = useAppStore((s) => s.isConnected)
   const {
     messages,
     isStreaming,
@@ -136,6 +139,10 @@ export default function Chat() {
       : []),
   ]
 
+  const handleRetryConnection = useCallback(() => {
+    wsService.reconnect()
+  }, [])
+
   return (
     <div className="flex h-full">
       {/* Conversation sidebar */}
@@ -145,7 +152,15 @@ export default function Chat() {
 
       {/* Chat area */}
       <div className="flex-1 flex flex-col">
-        {allMessages.length === 0 ? (
+        {!isConnected ? (
+          <div className="flex-1 flex items-center justify-center overflow-y-auto scrollbar-thin p-4">
+            <OfflineState
+              title="Backend Disconnected"
+              description="Reconnect to continue chatting with Astra. Your conversation history is preserved while offline."
+              onRetry={handleRetryConnection}
+            />
+          </div>
+        ) : allMessages.length === 0 ? (
           <div className="flex-1 flex items-center justify-center">
             <div className="text-center max-w-md p-8">
               <div className="w-16 h-16 rounded-2xl bg-astra-600/20 flex items-center justify-center mx-auto mb-4">

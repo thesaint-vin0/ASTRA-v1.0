@@ -6,6 +6,7 @@ import {
 } from 'lucide-react'
 import { showToast } from '../components/Toast'
 import { useRouteFocus } from '../hooks/useRouteFocus'
+import EmptyState from '../components/EmptyState'
 
 interface HelpArticle {
   id: string
@@ -577,13 +578,15 @@ export default function HelpCenter() {
             </div>
           )}
 
-          {/* Article List */}
+{/* Article List */}
           <div className="space-y-2">
             {filteredArticles.length === 0 ? (
-              <div className="text-center py-8">
-                <Book size={32} className="text-[rgb(var(--color-text-secondary))] mx-auto mb-2 opacity-50" />
-                <p className="text-sm text-[rgb(var(--color-text-secondary))]">No articles found</p>
-              </div>
+              <EmptyState
+                icon={<Book size={32} />}
+                title="No articles found"
+                description="Try adjusting your search or category filter"
+                compact
+              />
             ) : (
               filteredArticles.map((article) => {
                 const isFavorite = favorites.includes(article.id)

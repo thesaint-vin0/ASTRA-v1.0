@@ -2,6 +2,10 @@ import { useState, useEffect, useCallback, useMemo, memo } from 'react'
 import { Cpu, Download, Trash2, RefreshCw, CheckCircle, XCircle } from 'lucide-react'
 import { api } from '../services/api'
 import { useRouteFocus } from '../hooks/useRouteFocus'
+import EmptyState from '../components/EmptyState'
+import OfflineState from '../components/OfflineState'
+import { SkeletonCard } from '../components/SkeletonLoader'
+import { useAppStore } from '../stores/appStore'
 import type { Model } from '../types'
 
 function formatSize(bytes: number): string {
@@ -94,6 +98,7 @@ export default function Models() {
   const [models, setModels] = useState<Model[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const isConnected = useAppStore((s) => s.isConnected)
 
   const loadModels = useCallback(async () => {
     setLoading(true)
@@ -135,11 +140,27 @@ export default function Models() {
         </div>
       )}
 
-      {loading ? (
-        <div className="text-center py-12" role="status" aria-live="polite">
-          <div className="w-8 h-8 border-2 border-astra-500 border-t-transparent rounded-full animate-spin mx-auto mb-3" />
-          <p className="text-sm text-[rgb(var(--color-text-secondary))]">Loading models...</p>
+{!isConnected && !loading ? (
+        <OfflineState
+          title="Backend Disconnected"
+          description="Connect to the Astra backend to view available models."
+          onRetry={() => loadModels()}
+        />
+      ) : loading ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" aria-hidden="true">
+          <SkeletonCard />
+          <SkeletonCard />
+          <SkeletonCard />
+          <SkeletonCard />
+          <SkeletonCard />
+          <SkeletonCard />
         </div>
+      ) : models.length === 0 ? (
+        <EmptyState
+          icon={<Cpu size={48} />}
+          title="No models available"
+          description="Pull a model from Ollama to get started"
+        />
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" role="list" aria-label="Available models">
           {models.map((model) => (

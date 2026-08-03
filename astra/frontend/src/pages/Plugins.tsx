@@ -1,7 +1,11 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { Puzzle, Package, Trash2, RefreshCw, ToggleLeft, ToggleRight } from 'lucide-react'
 import { api } from '../services/api'
 import { useRouteFocus } from '../hooks/useRouteFocus'
+import EmptyState from '../components/EmptyState'
+import OfflineState from '../components/OfflineState'
+import { SkeletonCard } from '../components/SkeletonLoader'
+import { useAppStore } from '../stores/appStore'
 import type { Plugin } from '../types'
 
 export default function Plugins() {
@@ -9,12 +13,9 @@ export default function Plugins() {
   const [plugins, setPlugins] = useState<Plugin[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const isConnected = useAppStore((s) => s.isConnected)
 
-  useEffect(() => {
-    loadPlugins()
-  }, [])
-
-  const loadPlugins = async () => {
+  const loadPlugins = useCallback(async () => {
     setLoading(true)
     setError(null)
     try {
@@ -25,7 +26,11 @@ export default function Plugins() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [])
+
+  useEffect(() => {
+    loadPlugins()
+  }, [loadPlugins])
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -57,19 +62,25 @@ export default function Plugins() {
         </div>
       )}
 
-      {loading ? (
-        <div className="text-center py-12">
-          <div className="w-8 h-8 border-2 border-astra-500 border-t-transparent rounded-full animate-spin mx-auto mb-3" />
-          <p className="text-sm text-[rgb(var(--color-text-secondary))]">Loading plugins...</p>
+{!isConnected && !loading ? (
+        <OfflineState
+          title="Backend Disconnected"
+          description="Connect to the Astra backend to manage plugins."
+          onRetry={() => loadPlugins()}
+        />
+      ) : loading ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4" aria-hidden="true">
+          <SkeletonCard />
+          <SkeletonCard />
+          <SkeletonCard />
+          <SkeletonCard />
         </div>
       ) : plugins.length === 0 ? (
-        <div className="text-center py-12">
-          <Puzzle size={48} className="text-[rgb(var(--color-text-secondary))] mx-auto mb-3 opacity-50" />
-          <p className="text-[rgb(var(--color-text-secondary))]">No plugins installed</p>
-          <p className="text-sm text-[rgb(var(--color-text-secondary))] mt-1">
-            Place plugins in the plugins directory to get started
-          </p>
-        </div>
+        <EmptyState
+          icon={<Puzzle size={48} />}
+          title="No plugins installed"
+          description="Place plugins in the plugins directory to get started"
+        />
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {plugins.map((plugin) => (

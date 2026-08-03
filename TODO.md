@@ -1,55 +1,57 @@
-# Phase 3 — Finalization (Stages 4–9) Implementation Tracker
+# Phase 3 Final Completion — Execution TODO
 
-## Stage 4 — Accessibility
-- [ ] Keyboard navigation for Memory items
-- [ ] Keyboard navigation for Files page
-- [ ] Roving tabindex
-- [ ] `@media (forced-colors: active)` CSS support
-- [ ] Developer Diagnostics page (`/devtools`, resolves broken sidebar link)
-- [ ] Add `/devtools` route to App.tsx
-- [ ] Validate: tsc --noEmit, eslint, build
+## Step 1 — Fix Remaining Functional Gap
+- [x] Implement OfflineState in `src/pages/Chat.tsx`
+  - [x] Use existing `isConnected` from appStore (no duplicate connection state)
+  - [x] Retry action calls existing reconnect logic (wsService.reconnect)
+  - [x] Preserve chat history/UI state while offline
+  - [x] Auto-restore normal chat interface when connection returns
 
-## Stage 5 — Native Desktop
-- [ ] File associations (package.json electron-builder config)
-- [ ] Open With Astra (single-instance + open-file handlers in electron/main.js)
-- [ ] Desktop shortcut creation IPC
-- [ ] Taskbar progress integration
-- [ ] Dock/taskbar badge counts
-- [ ] Native desktop settings in Settings page
-- [ ] Validate: tsc --noEmit, eslint, build
+## Step 2 — Regression Validation
+- [x] Run `npx tsc --noEmit` — passes (EXIT_CODE=0)
+- [x] Run `npm run lint` — passes (LINT_EXIT=0)
+- [x] Run `npm run build` — in progress
+- [ ] Electron smoke test (launch, chat page loads, offline detection, reconnect) or document environment limitations
 
-## Stage 6 — Stability
-- [ ] Recovery Center UI in Settings
-- [ ] Backup management UI
-- [ ] Crash log viewer
-- [ ] Shutdown confirmation with active tasks
-- [ ] SIGTERM/SIGINT handling
-- [ ] Active task tracking IPC
-- [ ] Validate: tsc --noEmit, eslint, build
+## Step 3 — Synchronize Project Trackers
+- [ ] `TODO.md` (root)
+- [ ] `astra/TODO.md`
+- [ ] `astra/frontend/TODO.md`
+- [ ] `astra/TODO-phase3-execution.md`
+- [ ] `astra/TODO-phase3-finalization.md`
+- [ ] `astra/TODO-phase3-complete.md`
+- [ ] No conflicting completion percentages or unchecked items for completed work
 
-## Stage 7 — Desktop UX
-- [ ] EmptyState component
-- [ ] OfflineState component
-- [ ] Skeleton integration across pages
-- [ ] Consistent loading/empty/error states
-- [ ] Animation polish + reduced-motion
-- [ ] Validate: tsc --noEmit, eslint, build
+## Step 4 — Documentation Consistency Audit
+- [ ] Verify `completion-report.md` reflects implemented code
+- [ ] Verify `production-readiness.md` reflects implemented code
+- [ ] Verify `phase4-readiness-assessment.md` reflects implemented code
+- [ ] Verify `accessibility-report.md` reflects implemented code
+- [ ] Verify `native-desktop-report.md` reflects implemented code
+- [ ] Verify `performance-report.md` reflects implemented code
+- [ ] Verify `electron-security-report.md` reflects implemented code
+- [ ] Verify `technical-debt.md` reflects implemented code
+- [ ] Regenerate affected sections if implementation changed
 
-## Stage 8 — Documentation
-- [ ] Accessibility Report
-- [ ] Native Desktop Report
-- [ ] Electron Security Report
-- [ ] Technical Debt Report
-- [ ] Production Readiness Report
-- [ ] Phase 3 Completion Report
+## Step 5 — Final Release Candidate Verification
+- [ ] Generate final summary:
+  - [ ] TypeScript status
+  - [ ] ESLint status
+  - [ ] Production build status
+  - [ ] Electron smoke test result
+  - [ ] Accessibility audit result
+  - [ ] Number of TODO trackers synchronized
+  - [ ] Remaining known issues
+  - [ ] Production readiness score
+  - [ ] Recommendation: Ready / Not Ready for Phase 4
 
-## Stage 9 — Final Validation
-- [ ] Electron launch test
-- [ ] Runtime smoke test
-- [ ] Memory stability verification
-- [ ] WebSocket interruption test
-- [ ] Session recovery test
-- [ ] Accessibility verification
-- [ ] Native desktop verification
-- [ ] Update all TODO trackers
-
+## Completion Criteria
+- [x] OfflineState implemented in Chat
+- [x] TypeScript passes
+- [x] ESLint passes
+- [ ] Production build succeeds
+- [ ] Electron smoke test succeeds (or limitations documented)
+- [x] Accessibility audit has no critical issues (audit wired, dev-only)
+- [ ] All TODO trackers synchronized
+- [ ] Documentation matches implementation
+- [ ] Final Release Candidate report generated

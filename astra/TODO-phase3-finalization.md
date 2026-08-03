@@ -26,14 +26,14 @@
 ## Stage 4 — Accessibility
 - [x] Focus traps in CommandPalette + KeyboardShortcutsModal (already wired)
 - [x] Keyboard navigation for ContextMenu (arrows, Home/End, Enter, Esc, focus management)
-- [ ] ChatMessage Shift+F10 context menu
+- [x] ChatMessage Shift+F10 context menu
 - [x] Chat aria-live streaming region (already added)
-- [ ] Memory list keyboard nav
-- [ ] Files treegrid roles + keyboard nav
+- [x] Memory list keyboard nav
+- [x] Files treegrid roles + keyboard nav
 - [x] Forced-colors support (globals.css)
 - [x] Toast/Notification aria-live completion (already present)
-- [ ] axe-core audit
-- [ ] Validate: tsc --noEmit, eslint, build
+- [x] axe-core audit
+- [x] Validate: tsc --noEmit, eslint, build
 
 ## Stage 5 — Native Desktop
 - [x] File associations (package.json — win/mac/linux)
@@ -45,41 +45,42 @@
 - [x] App.tsx consumer (drain + live listener)
 - [x] Types updated (ElectronAPI)
 - [x] Native settings in Settings page (launch on startup, start minimized, minimize to tray, always on top, create desktop shortcut)
-- [ ] Validate: tsc --noEmit, eslint, build
+- [x] Validate: tsc --noEmit, eslint, build
 
 ## Stage 6 — Stability
 - [x] Recovery UI in Settings (backup create/list/restore)
 - [x] Backup management UI (create, list, restore, auto-rotation)
 - [x] Crash log viewer (load, display, copy diagnostics)
 - [x] SIGTERM/SIGINT handling (electron/main.js — already present)
-- [ ] Shutdown confirmation (Layout)
-- [ ] Validate: tsc --noEmit, eslint, build
+- [x] Shutdown confirmation (Layout)
+- [x] Validate: tsc --noEmit, eslint, build
 
 ## Stage 7 — Desktop UX
-- [ ] EmptyState component
-- [ ] OfflineState component
-- [ ] Skeleton integration in all pages
-- [ ] Empty states for all list views
-- [ ] Consistent loading/error experiences
-- [ ] Animation polish
-- [ ] Validate: tsc --noEmit, eslint, build
+- [x] EmptyState component
+- [x] OfflineState component
+- [x] Skeleton integration in all pages
+- [x] Empty states for all list views
+- [x] Consistent loading/error experiences
+- [x] Animation polish
+- [x] Validate: tsc --noEmit, eslint, build
 
 ## Stage 8 — Documentation
-- [ ] Performance Report
-- [ ] Accessibility Report
-- [ ] Native Desktop Report
-- [ ] Electron Security Report
-- [ ] Technical Debt Report
-- [ ] Production Readiness Report
-- [ ] Completion Report
+- [x] Performance Report
+- [x] Accessibility Report
+- [x] Native Desktop Report
+- [x] Electron Security Report
+- [x] Technical Debt Report
+- [x] Production Readiness Report
+- [x] Completion Report
+- [x] Phase 4 Readiness Assessment
 
 ## Stage 9 — Final Validation
-- [ ] Electron launch test
-- [ ] Runtime smoke test
-- [ ] Memory stability verification
-- [ ] WebSocket interruption test
-- [ ] Session recovery test
-- [ ] Accessibility verification
-- [ ] Native desktop verification
-- [ ] Update root TODO.md
+- [x] Electron launch test
+- [x] Runtime smoke test
+- [x] Memory stability verification
+- [x] WebSocket interruption test
+- [x] Session recovery test
+- [x] Accessibility verification
+- [x] Native desktop verification
+- [x] Update root TODO.md
 

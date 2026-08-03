@@ -9,6 +9,9 @@ import {
 import { api } from '../services/api'
 import { useAppStore } from '../stores/appStore'
 import { useRouteFocus } from '../hooks/useRouteFocus'
+import EmptyState from '../components/EmptyState'
+import OfflineState from '../components/OfflineState'
+import { SkeletonDashboard } from '../components/SkeletonLoader'
 import type { SystemMetrics, ActivityEvent } from '../types'
 
 function formatUptime(seconds: number): string {
@@ -204,9 +207,14 @@ const ActivityFeedWidget = memo(function ActivityFeedWidget({ activity }: { acti
         </h3>
         <span className="text-[10px] text-[rgb(var(--color-text-secondary))]">{activity.length} events</span>
       </div>
-      <div className="space-y-1 max-h-[280px] overflow-y-auto scrollbar-thin">
+<div className="space-y-1 max-h-[280px] overflow-y-auto scrollbar-thin">
         {activity.length === 0 ? (
-          <p className="text-xs text-[rgb(var(--color-text-secondary))] text-center py-4">No recent activity</p>
+          <EmptyState
+            icon={<Activity size={24} />}
+            title="No recent activity"
+            description="Activity will appear here as you use Astra"
+            compact
+          />
         ) : (
           activity.slice(0, 10).map((a) => (
             <div key={a.id} className="flex items-start gap-2 py-1.5 border-b border-[rgb(var(--color-border))]/50 last:border-0">
@@ -364,20 +372,25 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {error && (
-        <div className="mb-4 p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-sm text-red-500 flex items-center gap-2">
+{error && (
+        <div className="mb-4 p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-sm text-red-500 flex items-center gap-2" role="alert">
           <Activity size={16} /> {error}
         </div>
       )}
 
-      {loading && (
-        <div className="text-center py-20">
-          <div className="w-10 h-10 border-2 border-astra-500 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-          <p className="text-sm text-[rgb(var(--color-text-secondary))]">Loading dashboard data...</p>
-        </div>
+      {!isConnected && !loading && (
+        <OfflineState
+          title="Backend Disconnected"
+          description="Connect to the Astra backend to view system metrics and activity."
+          onRetry={() => { setRefreshing(true); fetchData().finally(() => setRefreshing(false)); }}
+        />
       )}
 
-      {!loading && (
+      {loading && (
+        <SkeletonDashboard aria-hidden="true" />
+      )}
+
+      {!loading && isConnected && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           <AiStatusWidget isConnected={isConnected} metrics={metrics} />
           <SystemStatusWidget metrics={metrics} />

@@ -8,6 +8,7 @@ import {
 } from 'lucide-react'
 import { showToast } from '../components/Toast'
 import { useRouteFocus } from '../hooks/useRouteFocus'
+import EmptyState from '../components/EmptyState'
 
 interface TutorialStep {
   title: string
@@ -351,13 +352,7 @@ export default function Tutorials() {
     advanced: 'text-red-500 bg-red-500/10',
   }
 
-  const difficultyLabels: Record<string, string> = {
-    beginner: 'Beginner',
-    intermediate: 'Intermediate',
-    advanced: 'Advanced',
-  }
-
-  // Calculate estimated completion
+// Calculate estimated completion
   const getTutorialProgress = (tutorialId: string): TutorialProgress | undefined => {
     return tutorialProgress[tutorialId]
   }
@@ -757,15 +752,21 @@ export default function Tutorials() {
               })}
 
               {filteredTutorials.length === 0 && (
-                <div className="col-span-full text-center py-12">
-                  <BookOpen size={32} className="text-[rgb(var(--color-text-secondary))] mx-auto mb-2 opacity-50" />
-                  <p className="text-sm text-[rgb(var(--color-text-secondary))]">No tutorials found</p>
-                  <button
-                    onClick={() => { setSearch(''); setSelectedCategory(null); setDifficultyFilter(null) }}
-                    className="text-xs text-astra-400 mt-2 hover:text-astra-300"
-                  >
-                    Clear filters
-                  </button>
+                <div className="col-span-full">
+                  <EmptyState
+                    icon={<BookOpen size={32} />}
+                    title="No tutorials found"
+                    description="Try adjusting your search or filters"
+                    compact
+                  />
+                  <div className="text-center">
+                    <button
+                      onClick={() => { setSearch(''); setSelectedCategory(null); setDifficultyFilter(null) }}
+                      className="text-xs text-astra-400 mt-2 hover:text-astra-300"
+                    >
+                      Clear filters
+                    </button>
+                  </div>
                 </div>
               )}
             </div>

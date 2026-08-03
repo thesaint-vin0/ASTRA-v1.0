@@ -1,118 +1,80 @@
-import { useState } from 'react'
+import { useState, useCallback } from 'react'
+import { motion } from 'framer-motion'
 import { useNavigate } from 'react-router-dom'
-import { Bot } from 'lucide-react'
-import { useRouteFocus } from '../hooks/useRouteFocus'
+import { Bot, Loader2 } from 'lucide-react'
+import { useAppStore } from '../stores/appStore'
+import { showToast } from '../components/Toast'
 
 export default function Login() {
-  const { ref: headingRef } = useRouteFocus()
-  const [isLogin, setIsLogin] = useState(true)
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const [error, setError] = useState('')
   const navigate = useNavigate()
+  const { setConnected } = useAppStore()
+  const [loading, setLoading] = useState(false)
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setError('')
-
-    // For now, just navigate to dashboard
-    navigate('/dashboard')
-  }
+  const handleQuickStart = useCallback(async () => {
+    setLoading(true)
+    try {
+      // Simulate connection check
+      const res = await fetch('/api/health')
+      if (res.ok) {
+        setConnected(true)
+        showToast({ type: 'success', title: 'Connected to Astra backend' })
+        navigate('/dashboard')
+      }
+    } catch {
+      showToast({ type: 'warning', title: 'Backend not reachable', message: 'Using offline mode. Some features may be unavailable.' })
+      navigate('/dashboard')
+    } finally {
+      setLoading(false)
+    }
+  }, [navigate, setConnected])
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-[rgb(var(--color-bg))] p-4">
-      <div className="w-full max-w-md">
-        <div className="text-center mb-8">
-          <div className="w-16 h-16 rounded-2xl bg-astra-600/20 flex items-center justify-center mx-auto mb-4">
-            <Bot size={32} className="text-astra-400" />
-          </div>
-          <h1 ref={headingRef} tabIndex={-1} className="text-2xl font-bold text-[rgb(var(--color-text))] focus:outline-none">Astra AI</h1>
-          <p className="text-sm text-[rgb(var(--color-text-secondary))] mt-1">
-            {isLogin ? 'Welcome back' : 'Create your account'}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, ease: 'easeOut' }}
+        className="w-full max-w-sm"
+      >
+        <div className="card p-8 text-center">
+          <motion.div
+            initial={{ scale: 0 }}
+            animate={{ scale: 1 }}
+            transition={{ type: 'spring', stiffness: 300, damping: 15, delay: 0.2 }}
+            className="w-16 h-16 rounded-2xl bg-gradient-to-br from-astra-500 to-astra-600 flex items-center justify-center mx-auto mb-4 shadow-xl shadow-astra-500/30"
+          >
+            <Bot size={32} className="text-white" />
+          </motion.div>
+
+          <h1 className="text-2xl font-bold text-[rgb(var(--color-text))] mb-2">Astra AI</h1>
+          <p className="text-sm text-[rgb(var(--color-text-secondary))] mb-6">
+            Your personal AI operating system
+          </p>
+
+          <button
+            onClick={handleQuickStart}
+            disabled={loading}
+            className="btn-primary w-full py-3 flex items-center justify-center gap-2"
+          >
+            {loading ? (
+              <>
+                <Loader2 size={18} className="animate-spin" />
+                Connecting...
+              </>
+            ) : (
+              'Get Started'
+            )}
+          </button>
+
+          <p className="text-xs text-[rgb(var(--color-text-secondary))] mt-4">
+            By continuing, you agree to process data locally on your device.
           </p>
         </div>
 
-        <form onSubmit={handleSubmit} className="card p-6 space-y-4">
-          {error && (
-            <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-sm text-red-500">
-              {error}
-            </div>
-          )}
-
-          {!isLogin && (
-            <div>
-              <label className="block text-sm font-medium text-[rgb(var(--color-text))] mb-1">
-                Username
-              </label>
-              <input
-                type="text"
-                required
-                className="input"
-                placeholder="Your username"
-              />
-            </div>
-          )}
-
-          <div>
-            <label className="block text-sm font-medium text-[rgb(var(--color-text))] mb-1">
-              Email
-            </label>
-            <input
-              type="email"
-              required
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="input"
-              placeholder="you@example.com"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-[rgb(var(--color-text))] mb-1">
-              Password
-            </label>
-            <input
-              type="password"
-              required
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="input"
-              placeholder="Your password"
-            />
-          </div>
-
-          <button type="submit" className="btn-primary w-full">
-            {isLogin ? 'Sign In' : 'Create Account'}
-          </button>
-
-          <p className="text-center text-sm text-[rgb(var(--color-text-secondary))]">
-            {isLogin ? (
-              <>
-                Don't have an account?{' '}
-                <button
-                  type="button"
-                  onClick={() => setIsLogin(false)}
-                  className="text-astra-400 hover:text-astra-300 font-medium"
-                >
-                  Sign up
-                </button>
-              </>
-            ) : (
-              <>
-                Already have an account?{' '}
-                <button
-                  type="button"
-                  onClick={() => setIsLogin(true)}
-                  className="text-astra-400 hover:text-astra-300 font-medium"
-                >
-                  Sign in
-                </button>
-              </>
-            )}
-          </p>
-        </form>
-      </div>
+        <p className="text-xs text-[rgb(var(--color-text-secondary))] text-center mt-4">
+          Astra AI v0.1.0 — Local-First AI Operating System
+        </p>
+      </motion.div>
     </div>
   )
 }
-

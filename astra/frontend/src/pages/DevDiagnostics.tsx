@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
 import {
-  Activity, Battery, Boxes, ClipboardCopy, Cpu, Database, Gauge,
-  Globe, HardDrive, MemoryStick, MessageSquareCode, Plug, RefreshCw,
+  Activity, Battery, Boxes, ClipboardCopy, Cpu, Database, Download, Eye, Gauge,
+  Globe, HardDrive, Loader2, MemoryStick, MessageSquareCode, Plug, RefreshCw,
   Server, ShieldAlert, Terminal, Wifi, Cpu as CpuIcon, CheckCircle2, XCircle
 } from 'lucide-react'
 import { useRouteFocus } from '../hooks/useRouteFocus'
@@ -11,6 +11,11 @@ import wsService from '../services/websocket'
 import type { ConnectionQuality } from '../services/websocket'
 import type { SystemMetrics, SystemStatus } from '../types'
 import { showToast } from '../components/Toast'
+import {
+  runAccessibilityAudit,
+  buildAuditReport,
+  type AccessibilityAuditResult,
+} from '../services/accessibilityAudit'
 
 interface SystemInfo {
   platform: string
@@ -73,6 +78,55 @@ export default function DevDiagnostics() {
   const [crashLogs, setCrashLogs] = useState<string>('')
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
+  const [auditResult, setAuditResult] = useState<AccessibilityAuditResult | null>(null)
+  const [auditRunning, setAuditRunning] = useState(false)
+  const [auditError, setAuditError] = useState<string | null>(null)
+
+  const handleRunAudit = useCallback(async () => {
+    setAuditRunning(true)
+    setAuditError(null)
+    try {
+      const result = await runAccessibilityAudit()
+      setAuditResult(result)
+      if (result && result.violations.length === 0) {
+        showToast({ type: 'success', title: 'Accessibility audit passed' })
+      } else if (result) {
+        showToast({
+          type: 'warning',
+          title: `Accessibility audit found ${result.violations.length} violation(s)`,
+          message: `${result.summary.critical} critical, ${result.summary.serious} serious, ${result.summary.moderate} moderate, ${result.summary.minor} minor`,
+        })
+      }
+    } catch (err) {
+      setAuditError((err as Error).message)
+      showToast({ type: 'error', title: 'Accessibility audit failed', message: (err as Error).message })
+    } finally {
+      setAuditRunning(false)
+    }
+  }, [])
+
+  const handleCopyAuditReport = useCallback(async () => {
+    if (!auditResult) return
+    try {
+      await navigator.clipboard.writeText(buildAuditReport(auditResult))
+      showToast({ type: 'success', title: 'Accessibility report copied to clipboard' })
+    } catch {
+      showToast({ type: 'error', title: 'Failed to copy accessibility report' })
+    }
+  }, [auditResult])
+
+  const handleExportAuditReport = useCallback(() => {
+    if (!auditResult) return
+    const report = buildAuditReport(auditResult)
+    const blob = new Blob([report], { type: 'text/markdown;charset=utf-8' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `astra-accessibility-audit-${new Date().toISOString().slice(0, 10)}.md`
+    a.click()
+    URL.revokeObjectURL(url)
+    showToast({ type: 'success', title: 'Accessibility report exported' })
+  }, [auditResult])
 
   const refresh = useCallback(async () => {
     setRefreshing(true)
@@ -249,6 +303,136 @@ export default function DevDiagnostics() {
           <InfoRow label="Active" value={metrics?.plugins?.active ?? 'N/A'} icon={<CheckCircle2 size={12} />} status="ok" />
           <InfoRow label="Errors" value={metrics?.plugins?.errors ?? 'N/A'} icon={<XCircle size={12} />} status={metrics?.plugins?.errors && metrics.plugins.errors > 0 ? 'error' : 'ok'} />
         </Section>
+      </div>
+
+{/* Accessibility Audit Panel */}
+      <div className="card p-4 mt-4">
+        <div className="flex items-center justify-between mb-3">
+          <h2 className="text-sm font-semibold text-[rgb(var(--color-text))] flex items-center gap-2">
+            <Eye size={14} className="text-astra-400" /> Accessibility Audit
+          </h2>
+          <div className="flex items-center gap-2">
+            {auditResult && (
+              <>
+                <button onClick={handleCopyAuditReport} className="btn-ghost text-xs flex items-center gap-1" aria-label="Copy accessibility audit report">
+                  <ClipboardCopy size={12} /> Copy
+                </button>
+                <button onClick={handleExportAuditReport} className="btn-ghost text-xs flex items-center gap-1" aria-label="Export accessibility audit report">
+                  <Download size={12} /> Export
+                </button>
+              </>
+            )}
+            <button onClick={handleRunAudit} disabled={auditRunning} className="btn-primary text-xs flex items-center gap-1" aria-label="Run accessibility audit">
+              {auditRunning ? <Loader2 size={12} className="animate-spin" /> : <Eye size={12} />}
+              {auditRunning ? 'Running...' : 'Run Audit'}
+            </button>
+          </div>
+        </div>
+
+        {auditError && (
+          <div className="p-3 mb-3 rounded-lg bg-red-500/10 border border-red-500/20 text-sm text-red-500" role="alert">
+            {auditError}
+          </div>
+        )}
+
+        {!auditResult && !auditRunning && !auditError && (
+          <p className="text-xs text-[rgb(var(--color-text-secondary))] text-center py-6">
+            Click "Run Audit" to perform an accessibility analysis of the current page.
+          </p>
+        )}
+
+        {auditRunning && (
+          <div className="flex items-center justify-center py-6" role="status" aria-live="polite">
+            <Loader2 size={20} className="animate-spin text-astra-400" />
+            <p className="ml-2 text-xs text-[rgb(var(--color-text-secondary))]">Auditing page accessibility...</p>
+          </div>
+        )}
+
+        {auditResult && !auditRunning && (
+          <div>
+            {/* Summary */}
+            <div className="grid grid-cols-4 gap-2 mb-4">
+              <div className="text-center p-2 rounded-lg bg-red-500/10">
+                <p className="text-lg font-bold text-red-500">{auditResult.summary.critical}</p>
+                <p className="text-[10px] text-red-400">Critical</p>
+              </div>
+              <div className="text-center p-2 rounded-lg bg-orange-500/10">
+                <p className="text-lg font-bold text-orange-500">{auditResult.summary.serious}</p>
+                <p className="text-[10px] text-orange-400">Serious</p>
+              </div>
+              <div className="text-center p-2 rounded-lg bg-yellow-500/10">
+                <p className="text-lg font-bold text-yellow-500">{auditResult.summary.moderate}</p>
+                <p className="text-[10px] text-yellow-400">Moderate</p>
+              </div>
+              <div className="text-center p-2 rounded-lg bg-blue-500/10">
+                <p className="text-lg font-bold text-blue-500">{auditResult.summary.minor}</p>
+                <p className="text-[10px] text-blue-400">Minor</p>
+              </div>
+            </div>
+
+            {/* WCAG Compliance Matrix */}
+            <div className="mb-4">
+              <h3 className="text-xs font-semibold text-[rgb(var(--color-text))] mb-2">WCAG Compliance Matrix</h3>
+              <div className="overflow-x-auto">
+                <table className="w-full text-xs" role="table" aria-label="WCAG compliance matrix">
+                  <thead>
+                    <tr className="text-[rgb(var(--color-text-secondary))] border-b border-[rgb(var(--color-border))]">
+                      <th className="text-left py-1.5 pr-2">Criteria</th>
+                      <th className="text-left py-1.5 px-2">Status</th>
+                      <th className="text-left py-1.5 px-2">Severity</th>
+                      <th className="text-left py-1.5 pl-2">Recommendation</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {auditResult.violations.length === 0 ? (
+                      <tr>
+                        <td colSpan={4} className="py-4 text-center text-green-500">
+                          <CheckCircle2 size={16} className="inline mr-1" />
+                          No violations found — all checks pass
+                        </td>
+                      </tr>
+                    ) : (
+                      auditResult.violations.slice(0, 20).map((v, i) => (
+                        <tr key={i} className="border-b border-[rgb(var(--color-border))]/50">
+                          <td className="py-1.5 pr-2 font-medium text-[rgb(var(--color-text))]">{v.id}</td>
+                          <td className="py-1.5 px-2">
+                            <span className={`inline-flex items-center gap-1 ${
+                              v.impact === 'critical' ? 'text-red-500' :
+                              v.impact === 'serious' ? 'text-orange-500' :
+                              v.impact === 'moderate' ? 'text-yellow-500' : 'text-blue-500'
+                            }`}>
+                              <span className={`w-1.5 h-1.5 rounded-full ${
+                                v.impact === 'critical' ? 'bg-red-500' :
+                                v.impact === 'serious' ? 'bg-orange-500' :
+                                v.impact === 'moderate' ? 'bg-yellow-500' : 'bg-blue-500'
+                              }`} />
+                              {v.impact}
+                            </span>
+                          </td>
+                          <td className="py-1.5 px-2 text-[rgb(var(--color-text-secondary))]">{v.impact}</td>
+                          <td className="py-1.5 pl-2 text-[rgb(var(--color-text-secondary))] max-w-[200px] truncate" title={v.help}>
+                            {v.help}
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+              {auditResult.violations.length > 20 && (
+                <p className="text-xs text-[rgb(var(--color-text-secondary))] mt-2">
+                  Showing 20 of {auditResult.violations.length} violations. Export the full report for complete details.
+                </p>
+              )}
+            </div>
+
+            {/* Passed checks */}
+            <div className="flex items-center gap-1 text-xs text-green-500">
+              <CheckCircle2 size={12} />
+{auditResult.passesCount} checks passed
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Application Logs */}
